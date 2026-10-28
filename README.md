@@ -128,7 +128,7 @@ log level = 3
 - Erfolgreiche Anmeldungen erschienen gar nicht im Standard-Log → Log-Level erhöht und `samba-ad-dc` neu gestartet
 
 **Was ich gelernt habe:**
-- Event ID 4624 = erfolgreiche Anmeldung, 4625 = fehlgeschlagene Anmeldung (gleiche Nummern wie bei Windows)
+- Die Event-IDs `4624` (erfolgreiche Anmeldung) und `4625` (fehlgeschlagene Anmeldung) stammen aus dem **Windows Security Event Log**. Samba-Logs auf Ubuntu verwenden nicht automatisch diese Windows-Event-IDs. In diesem Lab wurden Anmeldeversuche anhand der Samba-/Linux-Logs ausgewertet; für eine Zuordnung zu Windows-Event-IDs braucht man passende Windows-Ereignisquellen oder eine nachvollziehbare Normalisierung.
 - Ohne eine "Baseline" (normales Verhalten) kann man keinen Angriff erkennen
 
 ---
