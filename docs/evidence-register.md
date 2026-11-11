@@ -10,6 +10,7 @@ This register separates **reported results**, **reproducible commands**, and **s
 | Phase 9: DNS forwarder | `phase9-forwarder-vorher.png`, `phase9-dns-forwarder.png`, `phase9-dns-query.png` | Three stored screenshots | Repeat DNS lookup and check current resolver |
 | Later Linux domain-client check | Only reported: `id wtest` displayed `hr@lab.local` | Reported, original output missing | Run `id wtest`, `getent passwd wtest`; verify login separately |
 | Later Fail2ban test | Only reported: `Currently banned: 1`, banned IP `192.168.122.10`, `unbanip` returned `1` | Reported, original output missing | Verify jail/status, source logs, rules, and a controlled ban/unban |
+| Phase 10 Kea/libvirt DHCP | New screenshots received in conversation; not yet uploaded to GitHub. Kea active, libvirt XML without DHCP, client IP/lease screenshots | Screenshot evidence available locally; exact DHCP responder requires DORA verification | Capture DHCP option 54 and active libvirt net info |
 | Original exercises called Parts 10–13 | No full exercise text or results provided | **Mapping not verified** | Reconstruct from saved notes / command history before assigning phase numbers |
 
 ## How to gather evidence later (German / English)
