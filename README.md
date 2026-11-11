@@ -87,7 +87,7 @@ The repository also contains supporting documentation:
 - [DHCP and libvirt Troubleshooting Runbook](docs/runbooks/kea-libvirt-dhcp.md)
 - [Fail2ban SSH Test Runbook](docs/runbooks/fail2ban-ssh-test.md)
 - [Evidence Register](docs/evidence-register.md)
-- [Infrastructure Screenshots](infrastructure%20screenshots/)
+- [Infrastructure Screenshots](Screenshots/)
 
 The following lab journal describes my work step by step.
 
@@ -485,9 +485,9 @@ Außerdem habe ich den Unterschied zwischen Shell-Umleitungen und der Rechteausf
 
 ### Screenshots
 
-![Cron Job in der crontab](infrastructure%20screenshots/phase8-crontab.png)
+![Cron Job in der crontab](Screenshots/phase08-crontab.png)
 
-![Monitoring-Log mit alten und neuen Ergebnissen](infrastructure%20screenshots/phase8-cron-log-vergleich.png)
+![Monitoring-Log mit alten und neuen Ergebnissen](Screenshots/phase08-cron-log-comparison.png)
 
 ---
 
@@ -576,11 +576,11 @@ Erst wenn dieser Test erfolgreich ist, sollte die entsprechende Konfiguration ge
 
 ### Screenshots
 
-![DNS-Forwarder vor der Korrektur](infrastructure%20screenshots/phase9-forwarder-vorher.png)
+![DNS-Forwarder vor der Korrektur](Screenshots/phase09-dns-forwarder-before.png)
 
-![DNS-Forwarder nach der Korrektur](infrastructure%20screenshots/phase9-dns-forwarder.png)
+![DNS-Forwarder nach der Korrektur](Screenshots/phase09-dns-forwarder-fixed.png)
 
-![DNS-Abfrage der Zone lab.local](infrastructure%20screenshots/phase9-dns-query.png)
+![DNS-Abfrage der Zone lab.local](Screenshots/phase09-dns-zone-query.png)
 
 ---
 
@@ -685,7 +685,21 @@ Außerdem habe ich verstanden, warum man Änderungen am libvirt-Netzwerk vorsich
 
 Die Ergebnisse dieser Phase wurden anhand von Screenshots festgehalten.
 
-Ein Teil der Bilder liegt noch nicht im GitHub-Repository. Deshalb werden hier keine nicht vorhandenen Screenshot-Dateien verlinkt.
+Die vorhandenen Phase-10-Screenshots sind jetzt gemeinsam im Ordner [Screenshots](Screenshots/) abgelegt. Sie zeigen den Vergleich der libvirt-DHCP-Konfiguration, den laufenden Kea-Dienst, einen Lease-Eintrag, den Client-Test und den Monitoring-Status. Ein Paketmitschnitt zur eindeutigen Identifizierung des DHCP-Responders steht noch aus.
+
+![libvirt DHCP-Konfiguration vor der Änderung](Screenshots/phase10-libvirt-dhcp-before.png)
+
+![libvirt-Netzwerk ohne DHCP-Block](Screenshots/phase10-libvirt-dhcp-disabled.png)
+
+![Kea-Dienst initial](Screenshots/phase10-kea-service-initial.png)
+
+![Kea-Dienst bei späterer Prüfung](Screenshots/phase10-kea-service-later.png)
+
+![Kea-Lease-Eintrag](Screenshots/phase10-kea-lease-confirmed.png)
+
+![DHCP-Testclient](Screenshots/phase10-dhcp-client-success.png)
+
+![Monitoring-Kontrolle](Screenshots/phase10-monitoring-check.png)
 
 Weitere Details stehen im [DHCP-/libvirt-Runbook](docs/runbooks/kea-libvirt-dhcp.md) und im [Evidence Register](docs/evidence-register.md).
 
