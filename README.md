@@ -35,12 +35,12 @@ The Windows host was only used as the virtualization platform. All domain servic
 
 ```mermaid
 flowchart TB
-    H["Windows Hyper-V Host"]
-    U["Ubuntu Server — QEMU/libvirt"]
-    N["libvirt NAT Network — 192.168.122.0/24"]
-    D["samba-dc1 — AD DC, DNS, Kerberos, Kea"]
-    C["Ubuntu Domain Client"]
-    T["Ubuntu DHCP Test Client"]
+    H["Windows Hyper-V<br/>Host"]
+    U["Ubuntu Server<br/>QEMU / libvirt"]
+    N["libvirt NAT Network<br/>192.168.122.0/24"]
+    D["samba-dc1<br/>Samba AD DC · DNS · Kerberos<br/>Kea DHCP"]
+    C["Ubuntu Domain Client<br/>Domain identity tests"]
+    T["Ubuntu DHCP Test Client<br/>Network configuration tests"]
 
     H --> U
     U --> N
