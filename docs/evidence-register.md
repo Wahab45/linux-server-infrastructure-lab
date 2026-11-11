@@ -11,6 +11,9 @@ This register separates **reported results**, **reproducible commands**, and **s
 | Later Linux domain-client check | Only reported: `id wtest` displayed `hr@lab.local` | Reported, original output missing | Run `id wtest`, `getent passwd wtest`; verify login separately |
 | Later Fail2ban test | Only reported: `Currently banned: 1`, banned IP `192.168.122.10`, `unbanip` returned `1` | Reported, original output missing | Verify jail/status, source logs, rules, and a controlled ban/unban |
 | Phase 10 Kea/libvirt DHCP | Seven Phase-10 screenshots organized in `Screenshots/`. Kea active, libvirt XML without DHCP, client IP/lease screenshots | Screenshot evidence available locally; exact DHCP responder requires DORA verification | Capture DHCP option 54 and active libvirt net info |
+| Samba configuration (`testparm -s`) | `Screenshots/phase11-samba-configuration.png` | Screenshot stored; output shows AD DC role, realm and shares | Functional access controls not independently proved by configuration screenshot |
+| Bash monitoring script | `Screenshots/phase07-monitoring-script.png` | Screenshot stored | Script text not yet committed as a source file |
+| Kea configuration | `Screenshots/phase10-kea-configuration.png` | Screenshot stored | Config text not yet committed as a source file |
 | Original exercises called Parts 10–13 | No full exercise text or results provided | **Mapping not verified** | Reconstruct from saved notes / command history before assigning phase numbers |
 
 ## How to gather evidence later (German / English)

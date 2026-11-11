@@ -297,6 +297,14 @@ Ich habe dabei gelernt, Fehlermeldungen genauer zu lesen und zuerst nach konkret
 
 ---
 
+### Screenshot — Samba-Konfiguration (später dokumentiert)
+
+Die spätere Ausgabe von `sudo testparm -s` zeigt unter anderem die Rolle `ROLE_ACTIVE_DIRECTORY_DC`, die Domain `LAB.LOCAL` und die Freigaben `sysvol`, `netlogon` sowie `hr-share`.
+
+![Samba-Konfiguration aus testparm](Screenshots/phase11-samba-configuration.png)
+
+---
+
 ## Phase 5 — Domänenbenutzer, Gruppen und Kerberos
 
 ### Durchführung
@@ -424,6 +432,14 @@ Die Warnfunktion wurde ausgelöst, aber die Zählmethode musste entsprechend vor
 Mit einfachen Bash-Werkzeugen wie `grep`, Bedingungen und Schleifen kann man bereits grundlegende Monitoring-Funktionen entwickeln.
 
 Gleichzeitig habe ich gelernt, dass die Qualität eines Monitorings nicht nur vom Skript abhängt, sondern auch davon, wie die zugrunde liegenden Logdaten interpretiert werden.
+
+---
+
+### Screenshot — Monitoring-Skript
+
+Das aufgenommene Skript liest neu hinzugekommene Zeilen aus `/var/log/samba/log.samba` und zählt Treffer für `NT_STATUS_WRONG_PASSWORD`. Die Anzahl der Treffer ist nicht zwingend die Anzahl unabhängiger Anmeldeversuche.
+
+![Bash-Monitoring-Skript](Screenshots/phase07-monitoring-script.png)
 
 ---
 
@@ -690,6 +706,8 @@ Die vorhandenen Phase-10-Screenshots sind jetzt gemeinsam im Ordner [Screenshots
 ![libvirt DHCP-Konfiguration vor der Änderung](Screenshots/phase10-libvirt-dhcp-before.png)
 
 ![libvirt-Netzwerk ohne DHCP-Block](Screenshots/phase10-libvirt-dhcp-disabled.png)
+
+![Kea-Konfiguration](Screenshots/phase10-kea-configuration.png)
 
 ![Kea-Dienst initial](Screenshots/phase10-kea-service-initial.png)
 
