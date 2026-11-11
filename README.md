@@ -207,3 +207,32 @@ sudo systemctl restart samba-ad-dc
 ![DNS-Forwarder: Änderung und erfolgreicher Test](infrastructure%20screenshots/phase9-dns-forwarder.png)
 
 ![DNS-Abfrage der Zone lab.local](infrastructure%20screenshots/phase9-dns-query.png)
+
+---
+
+### Follow-up Lab — Ubuntu-Domain-Client und Fail2ban (nach Phase 9)
+
+**Status der Nachweise:** Die folgenden Ergebnisse wurden im Trainingsprotokoll berichtet. Die ursprünglichen Terminalausgaben und vollständigen Screenshots liegen im Repository derzeit **nicht** vor. Deshalb sind die Angaben als *reported lab results*, nicht als unabhängig reproduzierte Messungen gekennzeichnet. Eine genaue Zuordnung zu den ursprünglich als „Teile 10–13“ bezeichneten Übungen ist ohne deren vollständige Notizen nicht möglich.
+
+**Berichtete Ergebnisse:**
+- Ein Linux-Domänenclient konnte den Benutzer `wtest` auflösen; bei `id wtest` erschien auch die Domain-Gruppe `hr@lab.local`. Das ist ein Hinweis auf funktionierende Identitäts-/Gruppenauflösung, **kein vollständiger Beweis** für Anmeldung, PAM, Home-Verzeichnis und Dateizugriff.
+- Ein Fail2ban-Test meldete `Currently banned: 1` und `Banned IP list: 192.168.122.10`.
+- `unbanip` meldete `1`; im Test wurde die Sperre damit aufgehoben.
+- Laut Trainingsprotokoll blieben andere SSH-Verbindungen über eine andere IP nutzbar. Die exakte Jail-Konfiguration und die komplette Log-Ausgabe sind hier nicht überliefert.
+
+**Wichtige Einordnung:** `192.168.122.10` war laut Test der Quellhost `samba-dc1`. Ein Ban des Domain Controllers ist in echten Umgebungen potenziell riskant. Die Beobachtung „Connection refused“ allein beweist nicht die konkrete Firewall-Regel oder den Grund der Verbindungsablehnung; dafür wären `fail2ban-client`, Journal-/Auth-Logs und aktive Firewall-Regeln nötig.
+
+**Runbooks und Beleglage:**
+- [Runbook: Fail2ban-Lab-Test](docs/runbooks/fail2ban-ssh-test.md)
+- [Nachweisregister und fehlende Screenshots](docs/evidence-register.md)
+
+Weitere Tests werden erst nach erneuter Verifikation als „verified“ dokumentiert. Fehlende Screenshots werden **nicht** nachträglich erfunden.
+
+---
+
+### Lab-Scope / Geltungsbereich
+
+- **Gastbetriebssysteme:** Ubuntu Server und Ubuntu Desktop; Samba AD DC als Linux-basierter Domain Controller.
+- **Virtualisierungs-Host:** Die erste Ebene läuft laut Phase 1 auf **Windows Hyper-V**; darin läuft Ubuntu Server mit QEMU/libvirt. Die Aussage „Linux-only“ bezieht sich auf Server-, Client- und Troubleshooting-Gastsysteme, **nicht** auf den physischen Hypervisor-Host.
+- **Nested Virtualization:** Laut Phase 2 fehlte Hardwarebeschleunigung im Ubuntu-Gast; Software-Emulation (TCG) wurde verwendet. Das ist ein Lab-Workaround und keine Aussage über produktive Performance.
+- **Samba AD DC ist kein vollständiger Ersatz für Microsoft AD DS:** AD-kompatible Funktionen lassen sich üben, aber Verhalten und Integrationen unterscheiden sich, insbesondere bei Windows-spezifischen Komponenten. Alle Übungen in diesem Repository bleiben Linux-basiert.
