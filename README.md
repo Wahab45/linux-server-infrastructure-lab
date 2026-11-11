@@ -210,7 +210,28 @@ sudo systemctl restart samba-ad-dc
 
 ---
 
-### Follow-up Lab — Ubuntu-Domain-Client und Fail2ban (nach Phase 9)
+### Phase 10 — DHCP auf Ubuntu mit Kea und libvirt-Netzwerk
+
+**Ziel:** DHCP-Zuweisung für einen Ubuntu-Testclient untersuchen und eine mögliche Konkurrenz zwischen dem libvirt-DHCP-Dienst und Kea vermeiden.
+
+**Beobachtungen aus den hochgeladenen Screenshots:**
+- Das libvirt-Netz `default` verwendet NAT, `virbr0` und `192.168.122.1/24`.
+- Ein älterer `net-dumpxml`-Screenshot zeigt einen DHCP-Bereich `192.168.122.2–192.168.122.254`. Ein anderer Screenshot zeigt dasselbe Netz **ohne** den `<dhcp>`-Block.
+- Auf `samba-dc1` ist `kea-dhcp4-server` als `active (running)` dokumentiert. Im Journal sind `enp1s0`, das Subnetz `192.168.122.0/24` und die Kea-Version 2.4.1 sichtbar.
+- Die Datei `/var/lib/kea/kea-leases4.csv` zeigt Leases für `192.168.122.50`, einschließlich `dhcp-test`. Der Testclient zeigt `192.168.122.50/24` und die Default Route via `192.168.122.1`; `/etc/resolv.conf` verwendet den lokalen systemd-resolved-Stub `127.0.0.53` und die Search-Domain `lab.local`.
+- Eine zusätzliche Aufnahme zeigt, dass das lokale Monitoring weiterhin Ergebnisse protokolliert.
+
+**Bewertung:** Die Screenshots unterstützen einen erfolgreichen DHCP-Lab-Test. Ob tatsächlich ausschließlich Kea die aktuelle Adresse vergab, muss durch einen neuen DORA-Mitschnitt/Lease-Test und eine Prüfung der aktiven libvirt-Konfiguration verifiziert werden. Der `127.0.0.53`-Eintrag nennt **nicht** automatisch den vorgelagerten DNS-Server; dafür `resolvectl status` prüfen.
+
+**Wichtiger Netzwerkhinweis:** Zwei DHCP-Server auf demselben Layer-2-Segment können unvorhersehbare Antworten liefern. Bei einem libvirt-Standardnetz ist außerdem zwischen dem Netzwerk-XML und dem tatsächlich aktiven Zustand zu unterscheiden. Eine Änderung kann andere VMs beeinflussen; vor Änderungen die Konfiguration und alle Abhängigkeiten sichern.
+
+**Runbook:** [Kea DHCP und libvirt](docs/runbooks/kea-libvirt-dhcp.md) · **Belege:** [Nachweisregister](docs/evidence-register.md)
+
+**Screenshots:** Für Phase 10 wurden Bilder bereitgestellt. Die neuen Binärdateien wurden noch **nicht** über die GitHub-Integration hochgeladen; deshalb werden hier keine falschen Bildlinks erzeugt. Das lokale Paket enthält eine geordnete Auswahl zur manuellen Übertragung in `infrastructure screenshots/`.
+
+---
+
+### Follow-up Lab — Ubuntu-Domain-Client und Fail2ban (nach Phase 10)
 
 **Status der Nachweise:** Die folgenden Ergebnisse wurden im Trainingsprotokoll berichtet. Die ursprünglichen Terminalausgaben und vollständigen Screenshots liegen im Repository derzeit **nicht** vor. Deshalb sind die Angaben als *reported lab results*, nicht als unabhängig reproduzierte Messungen gekennzeichnet. Eine genaue Zuordnung zu den ursprünglich als „Teile 10–13“ bezeichneten Übungen ist ohne deren vollständige Notizen nicht möglich.
 
