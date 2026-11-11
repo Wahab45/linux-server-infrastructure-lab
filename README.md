@@ -1,6 +1,60 @@
-# Server Infrastructure Training
+# Linux Server Infrastructure — Samba AD DC, DNS, Kea DHCP & Troubleshooting (Lab)
 
-Trainingsprojekt: Linux Server Administration & Security (HybridShield Security)
+**Portfolio overview:** A hands-on Linux infrastructure lab built on Ubuntu Server and Ubuntu clients. This project covers virtualized server deployment, Samba Active Directory Domain Controller, Kerberos, DNS troubleshooting, Kea DHCP, login monitoring, scheduled Bash checks, and controlled Fail2ban testing. It emphasizes diagnosing real failures and recording what the evidence actually demonstrates.
+
+**Lab architecture:** Windows Hyper-V host → Ubuntu Server virtualization host (QEMU/libvirt) → Ubuntu server and client guests. All domain services, simulated users, and troubleshooting endpoints run on Linux. Nested KVM acceleration was unavailable in the recorded setup, so software emulation (TCG) was used.
+
+**Environment:** Ubuntu Server 24.04 family · Ubuntu Linux client · QEMU/libvirt · Samba AD DC · Kerberos · Samba internal DNS · Kea DHCP · systemd · Bash · Cron · Fail2ban · isolated `192.168.122.0/24` lab network.
+
+## Project results and evidence
+
+| Area | What was observed | Evidence level |
+| --- | --- | --- |
+| Virtualization | Ubuntu guest provisioning and libvirt NAT network `virbr0` | Documented lab history |
+| Directory services | Samba domain `lab.local`; test account and groups; Kerberos checks | Documented lab history |
+| DNS troubleshooting | Broken forwarding to `127.0.0.53`, repaired by using `192.168.122.1` | Stored screenshots for Phase 9 |
+| Authentication monitoring | Scheduled script tracked failed attempts and newly appended entries | Stored screenshots for Phase 8 |
+| DHCP | Kea service running, a recorded lease for `dhcp-test`, client address `192.168.122.50`, and libvirt XML before/after | Screenshots available; actual DHCP responder still requires packet-level confirmation |
+| Domain client | `id wtest` reportedly resolved domain group membership | Reported result; client login not fully verified here |
+| Fail2ban | Test reportedly banned `192.168.122.10` and later removed the ban | Reported result; complete original logs missing |
+
+**Scope and limitations:** This is a controlled educational lab, **not** a production deployment or security certification. Evidence is categorized as stored screenshot, recorded observation, or needing re-verification. A Kea lease does not by itself establish which server delivered the DHCP Offer, and successful identity lookup does not by itself prove interactive domain login. Samba AD is AD-compatible in important areas, but it does not reproduce every Microsoft AD DS behavior. No Windows clients or Windows servers are used in the guest lab.
+
+## Architecture
+
+```mermaid
+flowchart TB
+    H["Hyper-V host (virtualization layer only)"]
+    U["Ubuntu Server: QEMU / libvirt"]
+    N["libvirt NAT bridge virbr0: 192.168.122.1/24"]
+    D["samba-dc1: Samba AD DC / DNS / Kerberos / Kea"]
+    C["Ubuntu client: domain and network tests"]
+    T["Ubuntu dhcp-test: DHCP troubleshooting"]
+    H --> U --> N
+    N --> D
+    N --> C
+    N --> T
+```
+
+## Repository navigation
+
+- **[Chronological lab journal](#chronological-lab-journal--chronologisches-laborprotokoll):** practical setup, failures, commands, solutions and lessons (German).
+- **[DHCP / libvirt runbook](docs/runbooks/kea-libvirt-dhcp.md):** diagnose overlapping DHCP authority and validate the source of a lease.
+- **[Fail2ban SSH test runbook](docs/runbooks/fail2ban-ssh-test.md):** jail inspection, safe unban, validation and limitations.
+- **[Evidence register](docs/evidence-register.md):** which screenshots exist and which claims require a controlled retest.
+- **[Screenshots directory](infrastructure%20screenshots/):** preserved Phase 8–9 evidence; later Phase 10 screenshots are recorded separately and may have inconsistent upload names.
+
+## Reproducibility and security notes
+
+The repository documents a *learning process*, not a one-command deployment. Configuration changes should be reproduced on disposable VMs after checking current operating-system versions, service bindings and the actual network state. Do not run simulated failed logins against systems you do not own or administer. Do not commit passwords, Kerberos tickets, SSH keys, full unredacted authentication logs, or real client data.
+
+For each new phase, document: **Objective → Baseline → Implementation → Symptom → Diagnosis → Fix → Verification → Lessons learned**, with exact commands and redacted results. Review the evidence register before describing a phase as independently verified.
+
+---
+
+# Chronological lab journal / Chronologisches Laborprotokoll
+
+Trainingsprojekt: Linux Server Administration, Identity Services & Troubleshooting
 
 ---
 
