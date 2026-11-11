@@ -1,111 +1,205 @@
-# Linux Server Infrastructure — Samba AD DC, DNS, Kea DHCP & Troubleshooting (Lab)
+# Linux Server Infrastructure — Samba AD DC, DNS, Kea DHCP & Troubleshooting
 
-**Portfolio overview:** A hands-on Linux infrastructure lab built on Ubuntu Server and Ubuntu clients. This project covers virtualized server deployment, Samba Active Directory Domain Controller, Kerberos, DNS troubleshooting, Kea DHCP, login monitoring, scheduled Bash checks, and controlled Fail2ban testing. It emphasizes diagnosing real failures and recording what the evidence actually demonstrates.
+## Project Overview
 
-**Lab architecture:** Windows Hyper-V host → Ubuntu Server virtualization host (QEMU/libvirt) → Ubuntu server and client guests. All domain services, simulated users, and troubleshooting endpoints run on Linux. Nested KVM acceleration was unavailable in the recorded setup, so software emulation (TCG) was used.
+This project documents my hands-on experience building and troubleshooting a Linux-based server infrastructure in a virtual lab.
 
-**Environment:** Ubuntu Server 24.04 family · Ubuntu Linux client · QEMU/libvirt · Samba AD DC · Kerberos · Samba internal DNS · Kea DHCP · systemd · Bash · Cron · Fail2ban · isolated `192.168.122.0/24` lab network.
+My goal was to gain practical experience with Linux server administration, network services, user management, authentication, monitoring, and troubleshooting.
 
-## Project results and evidence
+Rather than focusing only on getting services running, I documented the problems I encountered, how I investigated them, and what I learned along the way.
 
-| Area | What was observed | Evidence level |
-| --- | --- | --- |
-| Virtualization | Ubuntu guest provisioning and libvirt NAT network `virbr0` | Documented lab history |
-| Directory services | Samba domain `lab.local`; test account and groups; Kerberos checks | Documented lab history |
-| DNS troubleshooting | Broken forwarding to `127.0.0.53`, repaired by using `192.168.122.1` | Stored screenshots for Phase 9 |
-| Authentication monitoring | Scheduled script tracked failed attempts and newly appended entries | Stored screenshots for Phase 8 |
-| DHCP | Kea service running, a recorded lease for `dhcp-test`, client address `192.168.122.50`, and libvirt XML before/after | Screenshots available; actual DHCP responder still requires packet-level confirmation |
-| Domain client | `id wtest` reportedly resolved domain group membership | Reported result; client login not fully verified here |
-| Fail2ban | Test reportedly banned `192.168.122.10` and later removed the ban | Reported result; complete original logs missing |
+The lab uses Ubuntu Server and Ubuntu clients. I configured a Samba Active Directory Domain Controller, tested Kerberos authentication, investigated DNS and DHCP issues, created Bash monitoring scripts, and performed controlled Fail2ban tests.
 
-**Scope and limitations:** This is a controlled educational lab, **not** a production deployment or security certification. Evidence is categorized as stored screenshot, recorded observation, or needing re-verification. A Kea lease does not by itself establish which server delivered the DHCP Offer, and successful identity lookup does not by itself prove interactive domain login. Samba AD is AD-compatible in important areas, but it does not reproduce every Microsoft AD DS behavior. No Windows clients or Windows servers are used in the guest lab.
+This is a personal learning project, not a production-ready infrastructure.
 
-## Architecture
+## Technologies Used
+
+| Area | Technologies |
+|---|---|
+| Operating Systems | Ubuntu Server 24.04, Ubuntu Linux clients |
+| Virtualization | Hyper-V, QEMU, libvirt |
+| Directory Services | Samba Active Directory Domain Controller |
+| Authentication | Kerberos, Samba, Winbind |
+| DNS | Samba Internal DNS |
+| DHCP | Kea DHCP |
+| Monitoring | Bash, Cron, Linux logs |
+| Security Testing | Fail2ban, SSH |
+| Service Management | systemd |
+| Networking | libvirt NAT, isolated lab network |
+
+## Lab Architecture
+
+The lab was built on a Windows machine running Hyper-V. Inside an Ubuntu Server virtual machine, I used QEMU/libvirt to create additional Linux VMs.
+
+The Windows host was only used as the virtualization platform. All domain services, client tests, and troubleshooting exercises were performed on Linux systems.
 
 ```mermaid
 flowchart TB
-    H["Hyper-V host (virtualization layer only)"]
-    U["Ubuntu Server: QEMU / libvirt"]
-    N["libvirt NAT bridge virbr0: 192.168.122.1/24"]
-    D["samba-dc1: Samba AD DC / DNS / Kerberos / Kea"]
-    C["Ubuntu client: domain and network tests"]
-    T["Ubuntu dhcp-test: DHCP troubleshooting"]
-    H --> U --> N
+    H["Windows Hyper-V Host"]
+    U["Ubuntu Server — QEMU/libvirt"]
+    N["libvirt NAT Network — 192.168.122.0/24"]
+    D["samba-dc1 — AD DC, DNS, Kerberos, Kea"]
+    C["Ubuntu Domain Client"]
+    T["Ubuntu DHCP Test Client"]
+
+    H --> U
+    U --> N
     N --> D
     N --> C
     N --> T
 ```
 
-## Repository navigation
+Nested virtualization was unavailable in this environment, so the QEMU guests were run using software emulation (TCG). This was noticeably slower than hardware-assisted virtualization, but it allowed me to continue the lab.
 
-- **[Chronological lab journal](#chronological-lab-journal--chronologisches-laborprotokoll):** practical setup, failures, commands, solutions and lessons (German).
-- **[DHCP / libvirt runbook](docs/runbooks/kea-libvirt-dhcp.md):** diagnose overlapping DHCP authority and validate the source of a lease.
-- **[Fail2ban SSH test runbook](docs/runbooks/fail2ban-ssh-test.md):** jail inspection, safe unban, validation and limitations.
-- **[Evidence register](docs/evidence-register.md):** which screenshots exist and which claims require a controlled retest.
-- **[Screenshots directory](infrastructure%20screenshots/):** preserved Phase 8–9 evidence; later Phase 10 screenshots are recorded separately and may have inconsistent upload names.
+## What I Worked On
 
-## Reproducibility and security notes
+During this project, I:
 
-The repository documents a *learning process*, not a one-command deployment. Configuration changes should be reproduced on disposable VMs after checking current operating-system versions, service bindings and the actual network state. Do not run simulated failed logins against systems you do not own or administer. Do not commit passwords, Kerberos tickets, SSH keys, full unredacted authentication logs, or real client data.
+- Set up Ubuntu Server and configured a virtualized Linux environment.
+- Installed and provisioned a Samba AD Domain Controller.
+- Created domain users and groups and tested Kerberos authentication.
+- Investigated authentication logs and wrote a Bash monitoring script.
+- Automated the monitoring script with Cron.
+- Diagnosed and fixed a DNS forwarding problem.
+- Installed Kea DHCP and investigated its interaction with libvirt networking.
+- Tested domain identity resolution from an Ubuntu client.
+- Performed controlled SSH and Fail2ban tests.
 
-For each new phase, document: **Objective → Baseline → Implementation → Symptom → Diagnosis → Fix → Verification → Lessons learned**, with exact commands and redacted results. Review the evidence register before describing a phase as independently verified.
+Some results are supported by screenshots, while others are documented observations that still require a complete retest. I have kept that distinction throughout the project.
+
+## Project Results and Evidence
+
+| Component | Result | Evidence |
+|---|---|---|
+| Virtualization | Ubuntu guests and libvirt NAT network configured | Lab documentation |
+| Samba AD DC | Domain `lab.local` provisioned, users and groups created | Lab documentation |
+| Kerberos | Authentication tested with `kinit` and `klist` | Lab documentation |
+| DNS | Incorrect DNS forwarder identified and corrected | Phase 9 screenshots |
+| Monitoring | Bash script and Cron job tested | Phase 8 screenshots |
+| Kea DHCP | Running service and DHCP lease recorded | Phase 10 screenshots; DHCP responder requires confirmation |
+| Domain Client | Domain user and group resolution reported | Reported test; full login not verified |
+| Fail2ban | IP ban and removal reported during testing | Reported test; original logs incomplete |
+
+## Documentation
+
+The repository also contains supporting documentation:
+
+- [DHCP and libvirt Troubleshooting Runbook](docs/runbooks/kea-libvirt-dhcp.md)
+- [Fail2ban SSH Test Runbook](docs/runbooks/fail2ban-ssh-test.md)
+- [Evidence Register](docs/evidence-register.md)
+- [Infrastructure Screenshots](infrastructure%20screenshots/)
+
+The following lab journal describes my work step by step.
 
 ---
 
-# Chronological lab journal / Chronologisches Laborprotokoll
+# Chronologisches Laborprotokoll
 
-Trainingsprojekt: Linux Server Administration, Identity Services & Troubleshooting
+## Linux Server Administration, Identity Services & Troubleshooting
 
----
+In diesem Labor habe ich eine Linux-basierte Serverumgebung aufgebaut und Schritt für Schritt erweitert.
 
-### Phase 1 — Hypervisor & Lab-Umgebung einrichten
+Dabei ging es mir nicht nur darum, Dienste zu installieren. Ich wollte auch verstehen, wie die einzelnen Komponenten zusammenarbeiten, welche Probleme auftreten können und wie man Fehler systematisch eingrenzt.
 
-**Durchgeführte Schritte:**
-- Windows-Rechner auf Kompatibilität geprüft (CPU, RAM, Hyper-V-Status)
-- Isolierten virtuellen Switch erstellt (`LabSwitch-Internal`), um das Firmennetzwerk nicht zu berühren
-- Ubuntu Server 24.04.4 LTS heruntergeladen und die Datei mit SHA256 überprüft:
-```
+Deshalb habe ich neben den Konfigurationsschritten auch die Schwierigkeiten und Lösungen dokumentiert.
+
+## Phase 1 — Hypervisor und Laborumgebung einrichten
+
+### Durchführung
+
+Zuerst habe ich geprüft, ob mein Windows-Rechner die Voraussetzungen für die Virtualisierung erfüllt. Dazu gehörten CPU, Arbeitsspeicher und der Hyper-V-Status.
+
+Anschließend habe ich einen internen virtuellen Switch mit dem Namen `LabSwitch-Internal` eingerichtet. Die Laborumgebung sollte vom Firmennetzwerk getrennt bleiben.
+
+Danach habe ich Ubuntu Server 24.04.4 LTS heruntergeladen und die SHA256-Prüfsumme kontrolliert:
+
+```powershell
 Get-FileHash "ubuntu-24.04.4-live-server-amd64.iso" -Algorithm SHA256
 ```
-- Erste virtuelle Maschine `Ubuntu-Server-Base` in Hyper-V erstellt und installiert
 
-**Probleme und Lösungen:**
-- PowerShell-Befehle für Hyper-V waren durch eine zentrale Firmenrichtlinie blockiert → Lösung: alles über die grafische Oberfläche (Hyper-V Manager) gemacht
-- Secure Boot hat den Ubuntu-Start blockiert (Vorlage war "Microsoft Windows") → Vorlage auf "Microsoft UEFI-Zertifizierungsstelle" geändert
+Zum Schluss habe ich die erste virtuelle Maschine `Ubuntu-Server-Base` in Hyper-V erstellt und Ubuntu Server installiert.
 
-**Was ich gelernt habe:**
-- Eine Prüfsumme (Checksum) zeigt, ob eine heruntergeladene Datei unverändert ist
-- Manche Sicherheitsrichtlinien blockieren nur PowerShell, nicht die grafische Oberfläche
+### Probleme und Lösungen
+
+**1. Hyper-V-Befehle waren blockiert**
+
+Einige PowerShell-Befehle für Hyper-V konnten aufgrund zentraler Firmenrichtlinien nicht ausgeführt werden.
+
+Da ich die Einstellungen nicht über PowerShell ändern konnte, habe ich die benötigten Schritte über den Hyper-V Manager durchgeführt.
+
+**2. Ubuntu startete nicht wegen Secure Boot**
+
+Beim ersten Start wurde Ubuntu durch die Secure-Boot-Konfiguration blockiert.
+
+Die VM verwendete noch die Vorlage „Microsoft Windows“. Nachdem ich sie auf „Microsoft UEFI-Zertifizierungsstelle“ geändert hatte, konnte Ubuntu starten.
+
+### Was ich gelernt habe
+
+Bei dieser Phase habe ich verstanden, warum es sinnvoll ist, Installationsdateien vor der Verwendung mit einer Prüfsumme zu kontrollieren.
+
+Außerdem habe ich gesehen, dass administrative Einschränkungen je nach Werkzeug unterschiedlich umgesetzt sein können. Wenn die Kommandozeile nicht verfügbar ist, kann die grafische Verwaltung in manchen Fällen eine Alternative sein.
 
 ---
 
-### Phase 2 — Ubuntu Server Installation & libvirt Aktivierung
+## Phase 2 — Ubuntu Server installieren und libvirt einrichten
 
-**Durchgeführte Schritte:**
-- Ubuntu Server installiert, SSH-Server aktiviert
-- Zweite Netzwerkkarte für Internetzugang hinzugefügt (Default Switch)
-- KVM/QEMU/libvirt installiert:
-```
+### Durchführung
+
+Nach der Ubuntu-Installation habe ich SSH aktiviert, damit ich den Server über das Netzwerk verwalten kann.
+
+Für den Internetzugang habe ich eine zweite virtuelle Netzwerkkarte hinzugefügt und mit dem Hyper-V Default Switch verbunden.
+
+Danach habe ich QEMU, KVM und libvirt installiert:
+
+```bash
 sudo apt install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virtinst virt-manager
 ```
 
-**Probleme und Lösungen:**
-- Verschachtelte Virtualisierung (Nested Virtualization) war durch eine Firmenrichtlinie blockiert, auch für Lese-Befehle wie `Get-VMProcessor` → bis heute ungelöst, IT-Anfrage läuft; Training läuft trotzdem weiter, nur ohne Hardware-Beschleunigung
-- `libvirtd` stürzte beim ersten Start ab, weil `/dev/kvm` fehlte → nach `sudo reboot` lief der Dienst normal im Software-Modus (TCG) weiter
+Damit wollte ich innerhalb des Ubuntu-Servers weitere virtuelle Maschinen erstellen.
 
-**Was ich gelernt habe:**
-- Ein Server kann auch ohne Hardware-Beschleunigung virtuelle Maschinen betreiben — nur langsamer
-- Nach einem großen Update (`apt upgrade`) sollte man den Server neu starten
+### Probleme und Lösungen
+
+**1. Nested Virtualization war nicht verfügbar**
+
+Die verschachtelte Virtualisierung war in meiner Umgebung durch Firmenrichtlinien eingeschränkt.
+
+Selbst einige Prüfkommandos wie `Get-VMProcessor` waren blockiert.
+
+Da ich die Einstellung nicht selbst ändern konnte, habe ich QEMU ohne KVM-Beschleunigung verwendet.
+
+Die virtuellen Maschinen liefen dadurch im Software-Modus (TCG). Das war langsamer, reichte aber für die geplanten Übungen aus.
+
+**2. libvirtd startete zunächst nicht richtig**
+
+Beim ersten Start gab es Probleme mit `libvirtd`, weil `/dev/kvm` nicht vorhanden war.
+
+Nach einem Neustart funktionierte der Dienst im Software-Modus:
+
+```bash
+sudo reboot
+```
+
+### Was ich gelernt habe
+
+Ich habe gelernt, dass QEMU virtuelle Maschinen auch ohne Hardware-Beschleunigung ausführen kann. Die Leistung ist dann allerdings deutlich eingeschränkt.
+
+Außerdem wurde mir klar, dass man nach größeren Systemänderungen prüfen sollte, ob ein Neustart erforderlich ist und ob anschließend alle benötigten Dienste korrekt laufen.
 
 ---
 
-### Phase 3 — Aufbau von samba-dc1
+## Phase 3 — Erste virtuelle Maschinen und samba-dc1
 
-**Durchgeführte Schritte:**
-- Cloud-Image heruntergeladen und als "goldene Kopie" gesichert
-- Erste Test-VM (`test-vm`) über `virt-install` erfolgreich gestartet
-- Echten Server `samba-dc1` mit fester IP-Adresse erstellt:
-```
+### Durchführung
+
+Für die weiteren Übungen habe ich ein Ubuntu-Cloud-Image heruntergeladen.
+
+Das Original habe ich als unveränderte Vorlage aufbewahrt. Für jede neue VM wurde eine separate Kopie erstellt.
+
+Zuerst habe ich eine Testmaschine namens `test-vm` gestartet. Danach habe ich den eigentlichen Server `samba-dc1` vorbereitet.
+
+Die VM wurde mit `virt-install` angelegt:
+
+```bash
 sudo virt-install --name samba-dc1 --memory 1024 --vcpus 2 \
   --disk /var/lib/libvirt/images/samba-dc1.qcow2,format=qcow2 \
   --disk /var/lib/libvirt/images/samba-dc1-seed.iso,device=cdrom \
@@ -113,201 +207,624 @@ sudo virt-install --name samba-dc1 --memory 1024 --vcpus 2 \
   --graphics none --console pty,target_type=serial --import
 ```
 
-**Probleme und Lösungen:**
-- Die Netzwerk-Konfiguration wurde nicht übernommen, weil die Festplatte von der schon benutzten `test-vm` kopiert wurde → neue, saubere Kopie vom Original-Image erstellt
-- `virsh` fand die VM nicht, weil es zwei getrennte Bereiche gibt (`session` und `system`) → ab jetzt immer `sudo virsh --connect qemu:///system` verwendet
+### Probleme und Lösungen
 
-**Was ich gelernt habe:**
-- Das Original-Cloud-Image darf man nie direkt starten — immer nur Kopien davon benutzen ("Goldenes Abbild")
-- `virsh` braucht immer denselben Verbindungsbereich, sonst findet man seine eigenen VMs nicht wieder
+**1. Die Netzwerkkonfiguration wurde nicht übernommen**
+
+Anfangs habe ich eine Festplatte kopiert, die bereits von `test-vm` verwendet worden war.
+
+Dadurch wurden Einstellungen übernommen, die für den neuen Server nicht passten.
+
+Ich habe das Problem gelöst, indem ich eine neue Kopie des ursprünglichen Cloud-Images erstellt habe.
+
+**2. virsh zeigte die virtuelle Maschine nicht an**
+
+Ein weiteres Problem war, dass `virsh` die VM nicht finden konnte.
+
+Bei der Fehlersuche habe ich festgestellt, dass libvirt zwischen `session` und `system` unterscheidet.
+
+Seitdem verwende ich für diese Laborumgebung:
+
+```bash
+sudo virsh --connect qemu:///system
+```
+
+### Was ich gelernt habe
+
+Cloud-Images eignen sich gut als Grundlage für mehrere virtuelle Maschinen. Wichtig ist aber, das Original unverändert zu behalten und für neue VMs eigene Kopien anzulegen.
+
+Außerdem habe ich verstanden, warum man bei libvirt immer prüfen muss, mit welcher Verbindung gearbeitet wird.
 
 ---
 
-### Phase 4 — Samba AD DC Installation
+## Phase 4 — Samba Active Directory Domain Controller einrichten
 
-**Durchgeführte Schritte:**
-- Voraussetzungen geprüft: FQDN (`hostname -f`) und Zeit-Synchronisation (`timedatectl`)
-- Samba, Kerberos und Winbind installiert
-- Domäne `lab.local` erstellt:
+### Durchführung
+
+Nachdem der Server vorbereitet war, habe ich mit der Einrichtung des Samba Domain Controllers begonnen.
+
+Zuerst habe ich den vollständigen Hostnamen und die Zeitsynchronisation kontrolliert:
+
+```bash
+hostname -f
+timedatectl
 ```
+
+Danach habe ich Samba, Kerberos und Winbind installiert.
+
+Die neue Domäne wurde mit folgendem Befehl erstellt:
+
+```bash
 sudo samba-tool domain provision --use-rfc2307 --realm=LAB.LOCAL \
   --domain=LAB --server-role=dc --dns-backend=SAMBA_INTERNAL
 ```
 
-**Probleme und Lösungen:**
-- `provision` schlug fehl, weil schon eine alte `smb.conf` existierte → alte Datei umbenannt, `provision` erneut ausgeführt
-- Der Dienst `samba-ad-dc` konnte den DNS-Port 53 nicht belegen, weil `systemd-resolved` ihn schon benutzte → `DNSStubListener=no` gesetzt und `systemd-resolved` neu gestartet
+Die Domäne heißt `lab.local`.
 
-**Was ich gelernt habe:**
-- Ubuntu hat standardmäßig einen eigenen DNS-Dienst, der mit neuen DNS-Servern in Konflikt geraten kann
-- Eine Fehlermeldung nennt oft direkt die Lösung — genau lesen, bevor man weitersucht
+Als DNS-Backend verwende ich den internen DNS-Dienst von Samba.
+
+### Probleme und Lösungen
+
+**1. Domain Provisioning schlug fehl**
+
+Beim ersten Versuch war bereits eine alte `smb.conf` vorhanden.
+
+Dadurch konnte Samba die neue Domäne nicht wie erwartet einrichten.
+
+Ich habe die alte Konfigurationsdatei umbenannt und den Provisioning-Vorgang erneut ausgeführt.
+
+**2. DNS-Port 53 war bereits belegt**
+
+Nach der Einrichtung konnte `samba-ad-dc` den DNS-Port 53 nicht verwenden.
+
+Die Ursache war der lokale DNS-Stub von `systemd-resolved`.
+
+Ich habe dessen Stub-Listener deaktiviert:
+
+```ini
+DNSStubListener=no
+```
+
+Anschließend habe ich `systemd-resolved` neu gestartet und die Samba-Konfiguration erneut geprüft.
+
+### Was ich gelernt habe
+
+Bei der Einrichtung eines Domain Controllers müssen mehrere Dienste zusammenarbeiten.
+
+Schon eine vorhandene Konfigurationsdatei oder ein belegter Netzwerkport kann verhindern, dass der Dienst richtig startet.
+
+Ich habe dabei gelernt, Fehlermeldungen genauer zu lesen und zuerst nach konkreten Ursachen zu suchen, statt sofort mehrere Einstellungen gleichzeitig zu ändern.
 
 ---
 
-### Phase 5 — Benutzer, Gruppen & Kerberos-Test
+## Phase 5 — Domänenbenutzer, Gruppen und Kerberos
 
-**Durchgeführte Schritte:**
-- Ersten Domänen-Benutzer und eine Gruppe erstellt:
-```
+### Durchführung
+
+Nach der Einrichtung der Domäne habe ich einen Testbenutzer und eine Gruppe erstellt.
+
+```bash
 sudo samba-tool user create wtest '<Passwort>'
 sudo samba-tool group add ITAdmins
 sudo samba-tool group addmembers ITAdmins wtest
 ```
-- Kerberos-Anmeldung getestet:
-```
+
+Danach habe ich die Kerberos-Authentifizierung getestet:
+
+```bash
 kinit wtest
 klist
 ```
 
-**Probleme und Lösungen:**
-- Das Sonderzeichen `!` im Passwort verursachte einen Bash-Fehler → Passwort in einfache Anführungszeichen gesetzt
-- Passwort von `wahab` vergessen → über die direkte Konsole (`virsh console`) neu gesetzt
+Mit `kinit` habe ich versucht, ein Kerberos-Ticket für den Benutzer anzufordern.
 
-**Was ich gelernt habe:**
-- Ein erfolgreiches Kerberos-Ticket ist der beste Beweis, dass die ganze Kette (Benutzer, LDAP, Kerberos) funktioniert
-- Wer Konsolen-Zugriff auf einen Server hat, kann Passwörter zurücksetzen — Festplattenverschlüsselung schützt davor
+Mit `klist` habe ich anschließend kontrolliert, ob ein Ticket vorhanden war.
+
+### Probleme und Lösungen
+
+**1. Sonderzeichen im Passwort verursachten einen Bash-Fehler**
+
+Bei der Benutzererstellung gab es zunächst ein Problem mit dem Sonderzeichen `!`.
+
+Die Bash-Shell interpretierte das Zeichen anders als erwartet.
+
+Nachdem ich das Passwort in einfache Anführungszeichen gesetzt hatte, konnte ich den Befehl ausführen.
+
+**2. Passwort eines Testbenutzers vergessen**
+
+Während der Übungen hatte ich das Passwort des Benutzers `wahab` vergessen.
+
+Über die direkte VM-Konsole konnte ich das Passwort zurücksetzen.
+
+Dafür habe ich die Konsole über libvirt verwendet:
+
+```bash
+virsh console
+```
+
+### Was ich gelernt habe
+
+Kerberos ist ein wichtiger Bestandteil der Authentifizierung in einer Active-Directory-Umgebung.
+
+Ein erfolgreich ausgestelltes Ticket zeigt, dass wesentliche Teile der Kerberos-Authentifizierung funktionieren. Andere Funktionen, zum Beispiel die interaktive Anmeldung eines Linux-Clients, müssen separat überprüft werden.
+
+Außerdem habe ich gelernt, wie wichtig der kontrollierte Zugriff auf die Serverkonsole ist.
 
 ---
 
-### Phase 6 — Monitoring: Authentifizierungs-Logs
+## Phase 6 — Authentifizierungs-Logs untersuchen
 
-**Durchgeführte Schritte:**
-- Log-Level von Samba erhöht, um Anmeldeversuche sichtbar zu machen (in `smb.conf`, Abschnitt `[global]`):
-```
+### Durchführung
+
+In dieser Phase wollte ich nachvollziehen, wie erfolgreiche und fehlgeschlagene Anmeldeversuche protokolliert werden.
+
+Dafür habe ich zunächst den Samba-Log-Level in der `smb.conf` angepasst:
+
+```ini
 log level = 3
 ```
-- Erfolgreiche und fehlgeschlagene Anmeldung im Log verglichen
 
-**Probleme und Lösungen:**
-- Erfolgreiche Anmeldungen erschienen gar nicht im Standard-Log → Log-Level erhöht und `samba-ad-dc` neu gestartet
+Anschließend habe ich `samba-ad-dc` neu gestartet und verschiedene Anmeldeversuche untersucht.
 
-**Was ich gelernt habe:**
-- Die Event-IDs `4624` (erfolgreiche Anmeldung) und `4625` (fehlgeschlagene Anmeldung) stammen aus dem **Windows Security Event Log**. Samba-Logs auf Ubuntu verwenden nicht automatisch diese Windows-Event-IDs. In diesem Lab wurden Anmeldeversuche anhand der Samba-/Linux-Logs ausgewertet; für eine Zuordnung zu Windows-Event-IDs braucht man passende Windows-Ereignisquellen oder eine nachvollziehbare Normalisierung.
-- Ohne eine "Baseline" (normales Verhalten) kann man keinen Angriff erkennen
+### Probleme und Lösungen
+
+Anfangs konnte ich erfolgreiche Anmeldungen nicht wie erwartet im Standard-Log finden.
+
+Nach der Anpassung des Log-Levels konnte ich die relevanten Protokolle genauer untersuchen.
+
+Dabei musste ich auch zwischen Windows-Ereignisprotokollen und Samba-Logs unterscheiden.
+
+Windows verwendet beispielsweise folgende Security Event IDs:
+
+- `4624` — erfolgreiche Anmeldung
+- `4625` — fehlgeschlagene Anmeldung
+
+Diese IDs werden jedoch nicht automatisch in den Samba-Logs eines Ubuntu-Servers verwendet.
+
+Deshalb habe ich für mein Monitoring die vorhandenen Samba- und Linux-Logeinträge untersucht.
+
+### Was ich gelernt habe
+
+Ein Logeintrag ist nur dann hilfreich, wenn man weiß, aus welchem Dienst er stammt und was er tatsächlich bedeutet.
+
+Ich habe außerdem verstanden, wie wichtig normales Systemverhalten als Vergleichsgrundlage ist. Ohne eine solche Baseline lassen sich auffällige Ereignisse schwerer einordnen.
 
 ---
 
-### Phase 7 — Erstes eigenes Überwachungsskript
+## Phase 7 — Eigenes Bash-Skript zur Überwachung
 
-**Durchgeführte Schritte:**
-- Erstes Bash-Skript geschrieben, das fehlgeschlagene Anmeldungen zählt und warnt
-- Mit einer Schleife 5 Fehlversuche simuliert:
-```
+### Durchführung
+
+Nachdem ich die Authentifizierungs-Logs untersucht hatte, wollte ich ein eigenes kleines Monitoring-Skript entwickeln.
+
+Das Skript sollte fehlgeschlagene Anmeldeversuche zählen und bei einer erhöhten Anzahl eine Warnung ausgeben.
+
+Für den Test habe ich mehrere fehlgeschlagene Kerberos-Anmeldungen simuliert:
+
+```bash
 for i in 1 2 3 4 5; do echo "wrongpass$i" | kinit wtest; done
 ```
 
-**Probleme und Lösungen:**
-- Die genaue Anzahl war höher als erwartet (12 statt 7), weil Kerberos pro Versuch mehrere interne Ereignisse loggt → kein Fehler, der Erkennungsmechanismus selbst hat trotzdem richtig gewarnt
+Die Tests fanden ausschließlich in meiner eigenen Laborumgebung statt.
 
-**Was ich gelernt habe:**
-- Ein einfaches Skript mit `grep -c` und `if/else` ist das Grundprinzip jedes Erkennungssystems (auch bei großen Tools wie Fail2ban)
+### Probleme und Lösungen
+
+Bei der Auswertung zeigte das Skript mehr Logeinträge an, als ich erwartet hatte.
+
+Statt sieben Einträgen wurden zwölf gezählt.
+
+Bei der Untersuchung stellte ich fest, dass ein einzelner Kerberos-Anmeldeversuch mehrere interne Logereignisse erzeugen kann.
+
+Das bedeutet, dass die Anzahl der Logeinträge nicht automatisch mit der Anzahl der tatsächlichen Anmeldeversuche übereinstimmt.
+
+Die Warnfunktion wurde ausgelöst, aber die Zählmethode musste entsprechend vorsichtig interpretiert werden.
+
+### Was ich gelernt habe
+
+Mit einfachen Bash-Werkzeugen wie `grep`, Bedingungen und Schleifen kann man bereits grundlegende Monitoring-Funktionen entwickeln.
+
+Gleichzeitig habe ich gelernt, dass die Qualität eines Monitorings nicht nur vom Skript abhängt, sondern auch davon, wie die zugrunde liegenden Logdaten interpretiert werden.
 
 ---
 
-### Phase 8 — Cron Job & intelligentes Log-Tracking
+## Phase 8 — Monitoring mit Cron automatisieren
 
-**Durchgeführte Schritte:**
-- Skript als geplante Aufgabe (Cron Job) alle 5 Minuten eingerichtet:
-```
+### Durchführung
+
+In dieser Phase wollte ich mein Monitoring-Skript automatisch ausführen lassen.
+
+Dafür habe ich einen Cron Job eingerichtet, der alle fünf Minuten gestartet wird:
+
+```cron
 */5 * * * * /home/wahab/check_failed_logins.sh >> /home/wahab/monitoring.log 2>&1
 ```
-- Skript verbessert: merkt sich jetzt die letzte Log-Position, statt immer die ganze Datei neu zu prüfen
 
-**Probleme und Lösungen:**
-- `sudo wc -l < datei` gab "Permission denied", weil die Weiterleitung (`<`) mit den Rechten des normalen Benutzers läuft, nicht mit `sudo` → durch `sudo cat datei | wc -l` ersetzt
+Die Ergebnisse werden in der Datei `monitoring.log` gespeichert.
 
-**Was ich gelernt habe:**
-- `sudo befehl < datei` ist nicht dasselbe wie `sudo cat datei | befehl` — ein wichtiger, oft übersehener Unterschied
-- Ein gutes Überwachungsskript merkt sich seinen letzten Stand, sonst wiederholt es alte Warnungen für immer
+Danach habe ich das Skript erweitert.
+
+Statt jedes Mal die komplette Logdatei auszuwerten, merkt sich das Skript die zuletzt verarbeitete Position.
+
+Damit sollen bei einem neuen Durchlauf nur die hinzugekommenen Logeinträge berücksichtigt werden.
+
+### Probleme und Lösungen
+
+**1. Permission denied beim Lesen der Logdatei**
+
+Beim Versuch, die Zeilen einer geschützten Datei zu zählen, habe ich folgenden Ansatz verwendet:
+
+```bash
+sudo wc -l < datei
+```
+
+Dabei erhielt ich einen Berechtigungsfehler.
+
+Die Ursache war, dass die Shell die Eingabeumleitung mit den Rechten des aktuellen Benutzers ausführt, bevor `sudo` den Befehl startet.
+
+Im Labor habe ich das Problem so gelöst:
+
+```bash
+sudo cat datei | wc -l
+```
+
+**2. Bereits bekannte Ereignisse wurden erneut gezählt**
+
+Die ursprüngliche Version wertete bei jedem Lauf die gesamte Datei aus.
+
+Dadurch konnten alte Ereignisse erneut in den Ergebnissen erscheinen.
+
+Ich habe das Skript deshalb so angepasst, dass es die zuletzt gelesene Position speichert.
+
+### Was ich gelernt habe
+
+Automatisierung bedeutet nicht nur, einen Befehl regelmäßig auszuführen.
+
+Man muss auch darauf achten, dass die Ergebnisse sinnvoll bleiben und bereits verarbeitete Daten nicht unnötig erneut ausgewertet werden.
+
+Außerdem habe ich den Unterschied zwischen Shell-Umleitungen und der Rechteausführung mit `sudo` besser verstanden.
+
+### Screenshots
 
 ![Cron Job in der crontab](infrastructure%20screenshots/phase8-crontab.png)
 
-![monitoring.log: alte Läufe (12) und neue Läufe (0)](infrastructure%20screenshots/phase8-cron-log-vergleich.png)
+![Monitoring-Log mit alten und neuen Ergebnissen](infrastructure%20screenshots/phase8-cron-log-vergleich.png)
 
 ---
 
-### Phase 9 — DNS prüfen und Forwarder reparieren
+## Phase 9 — DNS-Probleme analysieren und Forwarder korrigieren
 
-**Durchgeführte Schritte:**
-- DNS-Zonen von Samba angezeigt:
-```
+### Durchführung
+
+In dieser Phase habe ich die DNS-Konfiguration meines Samba Domain Controllers genauer untersucht.
+
+Zuerst habe ich mir die vorhandenen DNS-Zonen anzeigen lassen:
+
+```bash
 sudo samba-tool dns zonelist samba-dc1.lab.local -U Administrator
 ```
-- Inhalt der Zone `lab.local` abgefragt:
-```
+
+Anschließend habe ich die Einträge der Zone `lab.local` abgefragt:
+
+```bash
 sudo samba-tool dns query samba-dc1.lab.local lab.local @ ALL -U Administrator
 ```
-- Externe Namensauflösung getestet:
-```
+
+Danach wollte ich prüfen, ob auch externe Domains aufgelöst werden können:
+
+```bash
 host google.com 127.0.0.1
 ```
 
-**Probleme und Lösungen:**
-- `samba-tool dns` ohne `-U` fragte nach dem Passwort von `LAB\root` → mit `sudo` läuft der Befehl als `root`, und diesen Benutzer gibt es in der Domäne nicht. Lösung: Benutzer mit `-U Administrator` angeben
-- Externe Adressen wie `google.com` wurden nicht aufgelöst (`timed out`) → in `smb.conf` stand `dns forwarder = 127.0.0.53`. Das war die Adresse von `systemd-resolved`, den ich in Phase 4 abgeschaltet hatte. Lösung: neuen Forwarder setzen und den Dienst neu starten:
+### Probleme und Lösungen
+
+**1. samba-tool fragte nach dem falschen Benutzer**
+
+Beim ersten Versuch habe ich den DNS-Befehl ohne `-U Administrator` ausgeführt.
+
+Dadurch versuchte Samba, den Benutzer `LAB\root` für die Authentifizierung zu verwenden.
+
+Nachdem ich den Domänenadministrator ausdrücklich angegeben hatte, konnte ich die Abfrage durchführen.
+
+**2. Externe DNS-Auflösung funktionierte nicht**
+
+Bei der Abfrage externer Domains erhielt ich einen Timeout.
+
+In der `smb.conf` fand ich folgende Einstellung:
+
+```ini
+dns forwarder = 127.0.0.53
 ```
+
+Diese Adresse gehörte zum lokalen DNS-Stub von `systemd-resolved`.
+
+Da ich diesen Stub zuvor deaktiviert hatte, war der konfigurierte Forwarder nicht mehr geeignet.
+
+Ich habe daraufhin den DNS-Forwarder auf `192.168.122.1` geändert:
+
+```bash
 sudo sed -i 's/dns forwarder = 127.0.0.53/dns forwarder = 192.168.122.1/' /etc/samba/smb.conf
 sudo systemctl restart samba-ad-dc
 ```
-- Ein PowerShell-Befehl wurde in die Bash-Sitzung eingefügt, und es erschien nur noch `>` → Bash wartete auf das Ende eines unvollständigen Befehls. Lösung: `Ctrl+C`
 
-**Was ich gelernt habe:**
-- Samba speichert den Forwarder beim `provision` fest in `smb.conf`. Ändert man später das System, muss man ihn selbst anpassen
-- Vorher prüfen, ob der neue Forwarder antwortet (`host google.com 192.168.122.1`), und erst dann ändern
-- Ein einzelnes `>` als Prompt bedeutet: Bash wartet auf das Ende eines Befehls
+Danach habe ich die externe Namensauflösung erneut getestet.
 
-![DNS-Forwarder: Test vorher (timed out)](infrastructure%20screenshots/phase9-forwarder-vorher.png)
+Der Test war erfolgreich.
 
-![DNS-Forwarder: Änderung und erfolgreicher Test](infrastructure%20screenshots/phase9-dns-forwarder.png)
+**3. Bash zeigte nur noch das Zeichen `>`**
+
+Während der Arbeit habe ich versehentlich einen PowerShell-Befehl in die Bash-Sitzung eingefügt.
+
+Danach erschien nur noch der Prompt `>`.
+
+Später habe ich verstanden, dass Bash auf die Fortsetzung eines unvollständigen Befehls wartete.
+
+Mit `Ctrl+C` konnte ich den Vorgang abbrechen.
+
+### Was ich gelernt habe
+
+Diese Phase hat mir besonders deutlich gezeigt, wie stark DNS von der richtigen Konfiguration der beteiligten Dienste abhängt.
+
+Eine Einstellung, die bei der Installation noch funktioniert, kann nach einer späteren Systemänderung falsch sein.
+
+Ich habe außerdem gelernt, einen neuen DNS-Forwarder zuerst direkt zu testen:
+
+```bash
+host google.com 192.168.122.1
+```
+
+Erst wenn dieser Test erfolgreich ist, sollte die entsprechende Konfiguration geändert werden.
+
+### Screenshots
+
+![DNS-Forwarder vor der Korrektur](infrastructure%20screenshots/phase9-forwarder-vorher.png)
+
+![DNS-Forwarder nach der Korrektur](infrastructure%20screenshots/phase9-dns-forwarder.png)
 
 ![DNS-Abfrage der Zone lab.local](infrastructure%20screenshots/phase9-dns-query.png)
 
 ---
 
-### Phase 10 — DHCP auf Ubuntu mit Kea und libvirt-Netzwerk
+## Phase 10 — Kea DHCP installieren und libvirt-Netzwerk untersuchen
 
-**Ziel:** DHCP-Zuweisung für einen Ubuntu-Testclient untersuchen und eine mögliche Konkurrenz zwischen dem libvirt-DHCP-Dienst und Kea vermeiden.
+### Ziel
 
-**Beobachtungen aus den hochgeladenen Screenshots:**
-- Das libvirt-Netz `default` verwendet NAT, `virbr0` und `192.168.122.1/24`.
-- Ein älterer `net-dumpxml`-Screenshot zeigt einen DHCP-Bereich `192.168.122.2–192.168.122.254`. Ein anderer Screenshot zeigt dasselbe Netz **ohne** den `<dhcp>`-Block.
-- Auf `samba-dc1` ist `kea-dhcp4-server` als `active (running)` dokumentiert. Im Journal sind `enp1s0`, das Subnetz `192.168.122.0/24` und die Kea-Version 2.4.1 sichtbar.
-- Die Datei `/var/lib/kea/kea-leases4.csv` zeigt Leases für `192.168.122.50`, einschließlich `dhcp-test`. Der Testclient zeigt `192.168.122.50/24` und die Default Route via `192.168.122.1`; `/etc/resolv.conf` verwendet den lokalen systemd-resolved-Stub `127.0.0.53` und die Search-Domain `lab.local`.
-- Eine zusätzliche Aufnahme zeigt, dass das lokale Monitoring weiterhin Ergebnisse protokolliert.
+In dieser Phase wollte ich DHCP mit Kea auf meinem Ubuntu-Server einsetzen und untersuchen, wie sich der Dienst innerhalb des bestehenden libvirt-Netzwerks verhält.
 
-**Bewertung:** Die Screenshots unterstützen einen erfolgreichen DHCP-Lab-Test. Ob tatsächlich ausschließlich Kea die aktuelle Adresse vergab, muss durch einen neuen DORA-Mitschnitt/Lease-Test und eine Prüfung der aktiven libvirt-Konfiguration verifiziert werden. Der `127.0.0.53`-Eintrag nennt **nicht** automatisch den vorgelagerten DNS-Server; dafür `resolvectl status` prüfen.
+Ein wichtiger Punkt war die mögliche Konkurrenz zwischen Kea DHCP und dem DHCP-Dienst von libvirt.
 
-**Wichtiger Netzwerkhinweis:** Zwei DHCP-Server auf demselben Layer-2-Segment können unvorhersehbare Antworten liefern. Bei einem libvirt-Standardnetz ist außerdem zwischen dem Netzwerk-XML und dem tatsächlich aktiven Zustand zu unterscheiden. Eine Änderung kann andere VMs beeinflussen; vor Änderungen die Konfiguration und alle Abhängigkeiten sichern.
+### Ausgangssituation
 
-**Runbook:** [Kea DHCP und libvirt](docs/runbooks/kea-libvirt-dhcp.md) · **Belege:** [Nachweisregister](docs/evidence-register.md)
+Das libvirt-Netzwerk `default` verwendet:
 
-**Screenshots:** Für Phase 10 wurden Bilder bereitgestellt. Die neuen Binärdateien wurden noch **nicht** über die GitHub-Integration hochgeladen; deshalb werden hier keine falschen Bildlinks erzeugt. Das lokale Paket enthält eine geordnete Auswahl zur manuellen Übertragung in `infrastructure screenshots/`.
+- NAT
+- Die Bridge `virbr0`
+- Das Netzwerk `192.168.122.0/24`
+- Die Gateway-Adresse `192.168.122.1`
+
+In einem älteren Screenshot der libvirt-Netzwerkkonfiguration war ein DHCP-Bereich von `192.168.122.2` bis `192.168.122.254` zu sehen.
+
+Ein späterer Screenshot zeigte das Netzwerk ohne den entsprechenden `<dhcp>`-Block.
+
+Das war für die Fehlersuche wichtig, weil sich die gespeicherte Konfiguration und der tatsächlich aktive Zustand eines libvirt-Netzes unterscheiden können.
+
+### Durchführung und Beobachtungen
+
+Auf `samba-dc1` habe ich den Kea-DHCP-Server eingerichtet.
+
+Der Dienst `kea-dhcp4-server` wurde mit folgendem Status dokumentiert:
+
+```text
+active (running)
+```
+
+Im Journal waren außerdem folgende Informationen zu sehen:
+
+- Netzwerkschnittstelle `enp1s0`
+- Subnetz `192.168.122.0/24`
+- Kea-Version `2.4.1`
+
+In der Lease-Datei:
+
+```text
+/var/lib/kea/kea-leases4.csv
+```
+
+waren Einträge für die Adresse `192.168.122.50` vorhanden, darunter auch ein Lease für den Testclient `dhcp-test`.
+
+Auf dem Testclient wurde folgende IPv4-Adresse angezeigt:
+
+```text
+192.168.122.50/24
+```
+
+Die Default Route verwendete:
+
+```text
+192.168.122.1
+```
+
+Auch die DNS-Konfiguration habe ich überprüft.
+
+In `/etc/resolv.conf` stand der lokale Resolver:
+
+```text
+127.0.0.53
+```
+
+Zusätzlich wurde `lab.local` als Search-Domain angezeigt.
+
+Dieser Eintrag zeigt allerdings nur den lokalen systemd-resolved-Stub. Welcher DNS-Server dahinter verwendet wird, muss separat überprüft werden, zum Beispiel mit:
+
+```bash
+resolvectl status
+```
+
+### Offene Frage: Welcher DHCP-Server hat geantwortet?
+
+Die bisherigen Screenshots zeigen, dass Kea aktiv war und dass ein passender Lease dokumentiert wurde.
+
+Sie beweisen jedoch noch nicht eindeutig, dass ausschließlich Kea die DHCP-Antwort an den Client gesendet hat.
+
+Dafür wäre ein weiterer kontrollierter Test erforderlich.
+
+Dabei müsste ich die aktive libvirt-Konfiguration überprüfen und den DHCP-Ablauf mit einem Paketmitschnitt nachvollziehen.
+
+Insbesondere die DHCP-Schritte Discover, Offer, Request und Acknowledge (DORA) wären dafür relevant.
+
+### Was ich gelernt habe
+
+Bei DHCP reicht es nicht aus, nur zu prüfen, ob ein Client eine IP-Adresse erhalten hat.
+
+Wichtig ist auch, welcher Server die Adresse vergeben hat.
+
+Wenn mehrere DHCP-Server im selben Layer-2-Netz aktiv sind, kann das zu unerwartetem Verhalten führen.
+
+Außerdem habe ich verstanden, warum man Änderungen am libvirt-Netzwerk vorsichtig durchführen sollte: Andere virtuelle Maschinen können davon ebenfalls betroffen sein.
+
+### Dokumentation und Nachweise
+
+Die Ergebnisse dieser Phase wurden anhand von Screenshots festgehalten.
+
+Ein Teil der Bilder liegt noch nicht im GitHub-Repository. Deshalb werden hier keine nicht vorhandenen Screenshot-Dateien verlinkt.
+
+Weitere Details stehen im [DHCP-/libvirt-Runbook](docs/runbooks/kea-libvirt-dhcp.md) und im [Evidence Register](docs/evidence-register.md).
 
 ---
 
-### Follow-up Lab — Ubuntu-Domain-Client und Fail2ban (nach Phase 10)
+## Follow-up Lab — Ubuntu Domain Client und Fail2ban
 
-**Status der Nachweise:** Die folgenden Ergebnisse wurden im Trainingsprotokoll berichtet. Die ursprünglichen Terminalausgaben und vollständigen Screenshots liegen im Repository derzeit **nicht** vor. Deshalb sind die Angaben als *reported lab results*, nicht als unabhängig reproduzierte Messungen gekennzeichnet. Eine genaue Zuordnung zu den ursprünglich als „Teile 10–13“ bezeichneten Übungen ist ohne deren vollständige Notizen nicht möglich.
+Nach der DHCP-Phase habe ich weitere Tests mit einem Ubuntu-Domänenclient und Fail2ban durchgeführt.
 
-**Berichtete Ergebnisse:**
-- Ein Linux-Domänenclient konnte den Benutzer `wtest` auflösen; bei `id wtest` erschien auch die Domain-Gruppe `hr@lab.local`. Das ist ein Hinweis auf funktionierende Identitäts-/Gruppenauflösung, **kein vollständiger Beweis** für Anmeldung, PAM, Home-Verzeichnis und Dateizugriff.
-- Ein Fail2ban-Test meldete `Currently banned: 1` und `Banned IP list: 192.168.122.10`.
-- `unbanip` meldete `1`; im Test wurde die Sperre damit aufgehoben.
-- Laut Trainingsprotokoll blieben andere SSH-Verbindungen über eine andere IP nutzbar. Die exakte Jail-Konfiguration und die komplette Log-Ausgabe sind hier nicht überliefert.
+Die folgenden Ergebnisse stammen aus meinen damaligen Trainingsnotizen.
 
-**Wichtige Einordnung:** `192.168.122.10` war laut Test der Quellhost `samba-dc1`. Ein Ban des Domain Controllers ist in echten Umgebungen potenziell riskant. Die Beobachtung „Connection refused“ allein beweist nicht die konkrete Firewall-Regel oder den Grund der Verbindungsablehnung; dafür wären `fail2ban-client`, Journal-/Auth-Logs und aktive Firewall-Regeln nötig.
+Die vollständigen ursprünglichen Terminalausgaben und Screenshots sind aktuell nicht im Repository verfügbar. Deshalb dokumentiere ich diese Punkte als berichtete Testergebnisse.
 
-**Runbooks und Beleglage:**
-- [Runbook: Fail2ban-Lab-Test](docs/runbooks/fail2ban-ssh-test.md)
-- [Nachweisregister und fehlende Screenshots](docs/evidence-register.md)
+### Teil 1 — Domänenbenutzer auf einem Ubuntu-Client auflösen
 
-Weitere Tests werden erst nach erneuter Verifikation als „verified“ dokumentiert. Fehlende Screenshots werden **nicht** nachträglich erfunden.
+Bei einem Test konnte der Ubuntu-Client den Domänenbenutzer `wtest` auflösen.
+
+Unter anderem wurde folgender Befehl verwendet:
+
+```bash
+id wtest
+```
+
+In der Ausgabe wurde auch die Domänengruppe `hr@lab.local` angezeigt.
+
+Das ist ein Hinweis darauf, dass die Identitäts- und Gruppenauflösung funktioniert hat.
+
+Der Test allein bestätigt jedoch noch nicht, dass eine vollständige interaktive Anmeldung über PAM, die Erstellung eines Home-Verzeichnisses oder der Zugriff auf Dateien erfolgreich funktioniert.
+
+Diese Punkte müssten separat getestet und dokumentiert werden.
+
+### Teil 2 — Fail2ban und SSH testen
+
+In einem weiteren Test habe ich das Verhalten von Fail2ban bei fehlgeschlagenen SSH-Anmeldeversuchen untersucht.
+
+Laut meinen Notizen zeigte Fail2ban:
+
+```text
+Currently banned: 1
+Banned IP list: 192.168.122.10
+```
+
+Anschließend habe ich die Sperre mit `unbanip` aufgehoben.
+
+Der Befehl meldete:
+
+```text
+1
+```
+
+Außerdem war in den Trainingsnotizen festgehalten, dass andere SSH-Verbindungen über eine andere IP-Adresse weiterhin nutzbar waren.
+
+### Wichtige Einschränkungen
+
+Die Adresse `192.168.122.10` gehörte in diesem Test zum Server `samba-dc1`.
+
+Einen Domain Controller zu sperren, kann in einer produktiven Umgebung erhebliche Auswirkungen haben.
+
+Deshalb sollten solche Tests ausschließlich in einer kontrollierten Laborumgebung durchgeführt werden.
+
+Auch die Meldung `Connection refused` allein reicht nicht aus, um die konkrete Ursache einer Verbindungsablehnung zu belegen.
+
+Für eine vollständige Überprüfung wären die ursprüngliche Jail-Konfiguration, Authentifizierungs-Logs und Firewall-Regeln erforderlich.
+
+### Was ich gelernt habe
+
+Diese Tests haben mir gezeigt, dass man bei der Integration eines Linux-Clients verschiedene Ebenen der Authentifizierung getrennt prüfen muss.
+
+Auch bei Fail2ban ist es wichtig, nicht nur festzustellen, ob eine IP-Adresse gesperrt wurde, sondern die Ursache und die Auswirkungen dieser Sperre nachvollziehen zu können.
+
+Die Ergebnisse möchte ich bei einem weiteren kontrollierten Test vollständig dokumentieren.
+
+Weitere Informationen stehen im [Fail2ban-Runbook](docs/runbooks/fail2ban-ssh-test.md).
 
 ---
 
-### Lab-Scope / Geltungsbereich
+# Lessons Learned
 
-- **Gastbetriebssysteme:** Ubuntu Server und Ubuntu Desktop; Samba AD DC als Linux-basierter Domain Controller.
-- **Virtualisierungs-Host:** Die erste Ebene läuft laut Phase 1 auf **Windows Hyper-V**; darin läuft Ubuntu Server mit QEMU/libvirt. Die Aussage „Linux-only“ bezieht sich auf Server-, Client- und Troubleshooting-Gastsysteme, **nicht** auf den physischen Hypervisor-Host.
-- **Nested Virtualization:** Laut Phase 2 fehlte Hardwarebeschleunigung im Ubuntu-Gast; Software-Emulation (TCG) wurde verwendet. Das ist ein Lab-Workaround und keine Aussage über produktive Performance.
-- **Samba AD DC ist kein vollständiger Ersatz für Microsoft AD DS:** AD-kompatible Funktionen lassen sich üben, aber Verhalten und Integrationen unterscheiden sich, insbesondere bei Windows-spezifischen Komponenten. Alle Übungen in diesem Repository bleiben Linux-basiert.
+Dieses Projekt war für mich vor allem eine praktische Übung im systematischen Troubleshooting.
+
+Ich habe festgestellt, dass viele Probleme nicht durch die Installation selbst entstehen, sondern durch das Zusammenspiel verschiedener Dienste und Konfigurationen.
+
+Besonders hilfreich waren für mich folgende Erfahrungen:
+
+**1. Fehlermeldungen genauer untersuchen**
+
+Bevor ich eine Konfiguration ändere, versuche ich inzwischen besser zu verstehen, was die Fehlermeldung tatsächlich aussagt.
+
+**2. Abhängigkeiten zwischen Diensten erkennen**
+
+Das DNS-Problem mit Samba und `systemd-resolved` hat mir gezeigt, dass eine Änderung an einem Dienst auch Auswirkungen auf andere Komponenten haben kann.
+
+**3. Änderungen einzeln durchführen und testen**
+
+Gerade bei Netzwerkkonfigurationen ist es wichtig, den Ausgangszustand zu kennen und Änderungen nachvollziehbar zu dokumentieren.
+
+**4. Monitoring-Ergebnisse richtig interpretieren**
+
+Mehrere Logeinträge bedeuten nicht automatisch mehrere unabhängige Anmeldeversuche.
+
+**5. Ergebnisse mit Nachweisen dokumentieren**
+
+Ein laufender Dienst ist nicht automatisch der Beweis dafür, dass eine bestimmte Funktion vollständig und korrekt arbeitet.
+
+Deshalb möchte ich bei zukünftigen Übungen noch stärker mit Baselines, Screenshots, Logs und gezielten Funktionstests arbeiten.
+
+---
+
+# Project Scope and Limitations
+
+This repository documents a controlled educational lab.
+
+It should not be interpreted as a production deployment, security audit, or certification of the configured services.
+
+The main limitations are:
+
+- The physical virtualization host uses Windows Hyper-V, while the server and client lab systems run Ubuntu.
+- Nested KVM acceleration was unavailable, so QEMU software emulation was used.
+- Samba AD DC provides important Active Directory-compatible capabilities but does not reproduce every feature of Microsoft AD DS.
+- A successful Kerberos ticket does not by itself verify every domain login function.
+- The documented DHCP lease does not conclusively identify the responding DHCP server.
+- Some domain-client and Fail2ban results still require a complete retest with preserved logs.
+
+Passwords, Kerberos tickets, SSH keys, sensitive authentication logs, and real client data should never be committed to the repository.
+
+## Next Steps
+
+For future lab sessions, I plan to focus on completing the evidence for the remaining tests.
+
+The next priorities are to verify the active DHCP responder through packet capture, test a complete Ubuntu domain login, and repeat the Fail2ban exercise while preserving the relevant logs and configuration.
+
+I also want to continue improving the documentation so that each phase clearly shows the initial state, the implementation, the problem, the troubleshooting process, and the final verification.
+
+---
+
+## Final Note
+
+This project represents my practical learning process in Linux server administration.
+
+Not every configuration worked on the first attempt, and some tests still need additional verification. Documenting those limitations is part of the project.
+
+The most valuable experience for me was learning how to investigate problems, understand service dependencies, test possible solutions, and explain what the available evidence actually shows.
