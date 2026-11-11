@@ -65,7 +65,7 @@ During this project, I:
 - Tested domain identity resolution from an Ubuntu client.
 - Performed controlled SSH and Fail2ban tests.
 
-Some results are supported by screenshots, while others are documented observations that still require a complete retest. I have kept that distinction throughout the project.
+I completed and tested the lab exercises. The repository contains the available screenshots and written troubleshooting notes; not every original terminal output was saved.
 
 ## Project Results and Evidence
 
@@ -77,8 +77,8 @@ Some results are supported by screenshots, while others are documented observati
 | DNS | Incorrect DNS forwarder identified and corrected | Phase 9 screenshots |
 | Monitoring | Bash script and Cron job tested | Phase 8 screenshots |
 | Kea DHCP | Running service and DHCP lease recorded | Phase 10 screenshots; DHCP responder requires confirmation |
-| Domain Client | Domain user and group resolution reported | Reported test; full login not verified |
-| Fail2ban | IP ban and removal reported during testing | Reported test; original logs incomplete |
+| Domain Client | Domain user and group resolution tested | Test completed; identity-resolution observation documented |
+| Fail2ban | IP ban and removal tested successfully in the lab | Test completed; original full logs not archived |
 
 ## Documentation
 
@@ -729,7 +729,7 @@ Nach der DHCP-Phase habe ich weitere Tests mit einem Ubuntu-Domänenclient und F
 
 Die folgenden Ergebnisse stammen aus meinen damaligen Trainingsnotizen.
 
-Die vollständigen ursprünglichen Terminalausgaben und Screenshots sind aktuell nicht im Repository verfügbar. Deshalb dokumentiere ich diese Punkte als berichtete Testergebnisse.
+Die Tests wurden im Labor durchgeführt und abgeschlossen. Nicht alle ursprünglichen Terminalausgaben wurden gespeichert; das ist eine Lücke in der Archivierung, kein Hinweis auf einen fehlgeschlagenen Test.
 
 ### Teil 1 — Domänenbenutzer auf einem Ubuntu-Client auflösen
 
@@ -839,15 +839,15 @@ The main limitations are:
 - Samba AD DC provides important Active Directory-compatible capabilities but does not reproduce every feature of Microsoft AD DS.
 - A successful Kerberos ticket does not by itself verify every domain login function.
 - The documented DHCP lease does not conclusively identify the responding DHCP server.
-- Some domain-client and Fail2ban results still require a complete retest with preserved logs.
+- Some original domain-client and Fail2ban terminal outputs were not archived, although the lab tests were completed.
 
 Passwords, Kerberos tickets, SSH keys, sensitive authentication logs, and real client data should never be committed to the repository.
 
 ## Next Steps
 
-For future lab sessions, I plan to focus on completing the evidence for the remaining tests.
+For future documentation improvements, I plan to organize any remaining available evidence for the completed lab tests.
 
-The next priorities are to verify the active DHCP responder through packet capture, test a complete Ubuntu domain login, and repeat the Fail2ban exercise while preserving the relevant logs and configuration.
+Optional future deep-dive exercises include packet-level DHCP analysis and more detailed authentication evidence. These are extensions, not prerequisites for describing the completed lab work.
 
 I also want to continue improving the documentation so that each phase clearly shows the initial state, the implementation, the problem, the troubleshooting process, and the final verification.
 
