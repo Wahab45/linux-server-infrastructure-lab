@@ -8,7 +8,7 @@ My goal was to gain practical experience with Linux server administration, netwo
 
 Rather than focusing only on getting services running, I documented the problems I encountered, how I investigated them, and what I learned along the way.
 
-The lab uses Ubuntu Server and Ubuntu clients. I configured a Samba Active Directory Domain Controller, tested Kerberos authentication, investigated DNS and DHCP issues, created Bash monitoring scripts, and performed controlled Fail2ban tests.
+The lab uses Ubuntu Server and Ubuntu clients. I configured a Samba Active Directory Domain Controller, tested Kerberos authentication, investigated DNS and DHCP issues, joined an Ubuntu client to the domain, tested a group-restricted Samba share and user troubleshooting scenarios, created Bash monitoring scripts, and performed controlled Fail2ban tests.
 
 This is a personal learning project, not a production-ready infrastructure.
 
@@ -62,7 +62,8 @@ During this project, I:
 - Automated the monitoring script with Cron.
 - Diagnosed and fixed a DNS forwarding problem.
 - Installed Kea DHCP and investigated its interaction with libvirt networking.
-- Tested domain identity resolution from an Ubuntu client.
+- Joined an Ubuntu client to the domain and tested domain login, home-directory creation and group-based sudo.
+- Built an HR Samba share and resolved account, group, DNS and domain-membership troubleshooting scenarios.
 - Performed controlled SSH and Fail2ban tests.
 
 I completed and tested the lab exercises. The repository contains the available screenshots and written troubleshooting notes; not every original terminal output was saved.
@@ -77,14 +78,16 @@ I completed and tested the lab exercises. The repository contains the available 
 | DNS | Incorrect DNS forwarder identified and corrected | Phase 9 screenshots |
 | Monitoring | Bash script and Cron job tested | Phase 8 screenshots |
 | Kea DHCP | Running service and DHCP lease recorded | Phase 10 screenshots; DHCP responder requires confirmation |
-| Domain Client | Domain user and group resolution tested | Test completed; identity-resolution observation documented |
-| Fail2ban | IP ban and removal tested successfully in the lab | Test completed; original full logs not archived |
+| Domain Client | Domain join, identity resolution, interactive login, home creation and group-based sudo tested | Detailed Parts 11 journals |
+| HR Share & Troubleshooting | Group-based access, disabled account, broken DNS, lost domain membership restored; clock-skew attempt did not trigger the expected error | Detailed Part 12 journals and runbook |
+| Fail2ban | IP ban and removal tested successfully in the lab, with resource checks | Detailed Part 13 journals; original full logs not archived |
 
 ## Documentation
 
 The repository also contains supporting documentation:
 
 - [DHCP and libvirt Troubleshooting Runbook](docs/runbooks/kea-libvirt-dhcp.md)
+- [Ubuntu Domain Client & HR Share Runbooks](docs/runbooks/domain-client-and-hr-share.md)
 - [Fail2ban SSH Test Runbook](docs/runbooks/fail2ban-ssh-test.md)
 - [Evidence Register](docs/evidence-register.md)
 - [Infrastructure Screenshots](Screenshots/)
@@ -883,7 +886,7 @@ The main limitations are:
 - The physical virtualization host uses Windows Hyper-V, while the server and client lab systems run Ubuntu.
 - Nested KVM acceleration was unavailable, so QEMU software emulation was used.
 - Samba AD DC provides important Active Directory-compatible capabilities but does not reproduce every feature of Microsoft AD DS.
-- A successful Kerberos ticket does not by itself verify every domain login function.
+- Kerberos ticket acquisition and domain-client login are different functions; both were investigated separately in Part 11.
 - The documented DHCP lease does not conclusively identify the responding DHCP server.
 - Some original domain-client and Fail2ban terminal outputs were not archived, although the lab tests were completed.
 
@@ -903,6 +906,6 @@ I also want to continue improving the documentation so that each phase clearly s
 
 This project represents my practical learning process in Linux server administration.
 
-Not every configuration worked on the first attempt, and some tests still need additional verification. Documenting those limitations is part of the project.
+Not every configuration worked on the first attempt. One clock-skew experiment did not reproduce the anticipated fault, and not every original terminal output was archived. Recording outcomes accurately is part of the project.
 
 The most valuable experience for me was learning how to investigate problems, understand service dependencies, test possible solutions, and explain what the available evidence actually shows.
