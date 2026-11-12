@@ -1,35 +1,29 @@
 # Evidence Register / Nachweisregister
 
 ## Purpose
-The lab exercises were completed and tested by the project owner. This register tracks which evidence artifacts have been saved to GitHub. Missing screenshots do not mean an exercise failed or was not performed.
+All 13 training parts were carried out as described by the project owner. This register differentiates **completed practical work**, the **level of retained documentation**, and **optional future exercises**. A missing screenshot does not mean a test was not performed or did not work.
 
-| Exercise | Evidence currently in GitHub | Status | Next verification |
-|---|---|---|---|
-| Phases 1–7 | README narrative; no screenshots | Completed in the lab; documentation is mainly textual | Capture configurations and relevant redacted command output on next run |
-| Phase 8: Cron/monitoring | `Screenshots/phase08-crontab.png`, `phase08-cron-log-comparison.png` | Two stored screenshots | Check current crontab and latest logs |
-| Phase 9: DNS forwarder | `phase09-dns-forwarder-before.png`, `phase09-dns-forwarder-fixed.png`, `phase09-dns-zone-query.png` | Three stored screenshots | Repeat DNS lookup and check current resolver |
-| Later Linux domain-client check | Only reported: `id wtest` displayed `hr@lab.local` | Test completed according to project owner; full original output not archived | Run `id wtest`, `getent passwd wtest`; verify login separately |
-| Later Fail2ban test | Only reported: `Currently banned: 1`, banned IP `192.168.122.10`, `unbanip` returned `1` | Reported, original output missing | Verify jail/status, source logs, rules, and a controlled ban/unban |
-| Phase 10 Kea/libvirt DHCP | Seven Phase-10 screenshots organized in `Screenshots/`. Kea active, libvirt XML without DHCP, client IP/lease screenshots | Lab test completed; screenshots stored; no DHCP packet capture archived | Capture DHCP option 54 and active libvirt net info |
-| Samba configuration (`testparm -s`) | `Screenshots/phase11-samba-configuration.png` | Screenshot stored; output shows AD DC role, realm and shares | Functional access controls not independently proved by configuration screenshot |
-| Bash monitoring script | `Screenshots/phase07-monitoring-script.png` | Screenshot stored | Script text not yet committed as a source file |
-| Kea configuration | `Screenshots/phase10-kea-configuration.png` | Screenshot stored | Config text not yet committed as a source file |
+**Sources:** The supplied Arabic full lab journal (Parts 1–13), German learning notes (Teile 1–13), README lab history and stored GitHub screenshots. The journals are not uploaded unchanged because their page branding must be removed before public distribution.
 
-## How to gather evidence later (German / English)
+| Part | Completed lab content | Archived evidence |
+| --- | --- | --- |
+| 1–3 | Hyper-V lab, Ubuntu Server, QEMU/libvirt, first test VMs | Written chronological journals |
+| 4–5 | Samba AD DC, Kerberos, domain users and groups | Journals; Samba configuration screenshot captured later (`Screenshots/phase11-samba-configuration.png`) |
+| 6–7 | Authentication log analysis and Bash detection script | Journals; `Screenshots/phase07-monitoring-script.png` |
+| 8 | Cron and incremental log processing | `Screenshots/phase08-crontab.png`, `Screenshots/phase08-cron-log-comparison.png` |
+| 9 | Samba DNS query and external forwarder repair | `Screenshots/phase09-dns-forwarder-before.png`, `Screenshots/phase09-dns-forwarder-fixed.png`, `Screenshots/phase09-dns-zone-query.png` |
+| 10 | Kea DHCP, libvirt DHCP adjustment, Ubuntu client lease test | Eight `phase10-` screenshots in `Screenshots/`, including service, configuration, network and lease results; see README |
+| 11 | Ubuntu domain join, SSSD, login, home creation and group-based sudo | Detailed Arabic and German journals; original complete terminal transcript not archived |
+| 12 | HR share and five troubleshooting scenarios; wrong-host `samba-tool` issue | Detailed Arabic and German journals; [scenario runbooks](runbooks/domain-client-and-hr-share.md) |
+| 13 | Fail2ban SSH test, recorded ban/unban, different-source connectivity and resource checks | Detailed Arabic and German journals; [Fail2ban runbook](runbooks/fail2ban-ssh-test.md) |
 
-1. **Ausgangszustand / Baseline:** Write down the VM role, hostname, Ubuntu version, timestamp, test account, relevant IP addresses and intended outcome.
-2. **Symptom / Symptom:** Preserve redacted command output and the failure.
-3. **Diagnose / Diagnosis:** Record the exact commands and their results, including journal logs when useful.
-4. **Lösung / Fix:** Document the applied change, with configuration diffs if possible.
-5. **Nachtest / Verification:** Repeat the test and preserve the new result. Include rollback instructions.
-6. **Datenschutz / Privacy:** Do not commit passwords, Kerberos tickets, private keys, tokens, confidential host details, or users' personal data. Use placeholders where necessary.
+## Technical qualifications
 
-A text transcript in Markdown is acceptable evidence for learning; a screenshot is optional. Describe the user's completed lab work accurately. Distinguish missing archived evidence from a failed or unperformed test.
+- The Part 12 **clock-skew** experiment did not produce the anticipated Kerberos error. The clock was restored. The experiment was completed, but the predicted fault was not reproduced.
+- The Part 12 `chmod 0777` permissions were deliberately permissive for a controlled lab and should not be copied into a production configuration.
+- The Part 13 Fail2ban ban and unban were observed. The number of visible SSH messages must not be treated as a precise count of internal authentication failures.
+- The Part 10 screenshots and journal document a functional DHCP exercise. A packet capture was not saved; this is a limit on forensic detail, not evidence of a failed configuration.
 
-## Optional evidence filenames for future documentation
-- `evidence/client-id-wtest-redacted.txt`
-- `evidence/fail2ban-status-redacted.txt`
-- `evidence/fail2ban-journal-redacted.txt`
-- `evidence/fail2ban-firewall-redacted.txt`
+## Documentation hygiene
 
-These filenames are **suggestions**, not files already collected.
+Only redacted, non-sensitive configs and source code should be committed. Avoid credentials, SSH keys, Kerberos tickets, customer records or confidential company material. Original screenshots and history should not be fabricated. Any future verification steps are optional expansions, **not requirements to repeat completed exercises**.
