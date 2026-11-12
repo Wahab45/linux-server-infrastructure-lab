@@ -723,74 +723,120 @@ Weitere Details stehen im [DHCP-/libvirt-Runbook](docs/runbooks/kea-libvirt-dhcp
 
 ---
 
-## Follow-up Lab — Ubuntu Domain Client und Fail2ban
+## Phase 11 — Ubuntu-Client in die Domäne aufnehmen
 
-Nach der DHCP-Phase habe ich weitere Tests mit einem Ubuntu-Domänenclient und Fail2ban durchgeführt.
+### Durchführung
 
-Die folgenden Ergebnisse stammen aus meinen damaligen Trainingsnotizen.
-
-Die Tests wurden im Labor durchgeführt und abgeschlossen. Nicht alle ursprünglichen Terminalausgaben wurden gespeichert; das ist eine Lücke in der Archivierung, kein Hinweis auf einen fehlgeschlagenen Test.
-
-### Teil 1 — Domänenbenutzer auf einem Ubuntu-Client auflösen
-
-Bei einem Test konnte der Ubuntu-Client den Domänenbenutzer `wtest` auflösen.
-
-Unter anderem wurde folgender Befehl verwendet:
+Für den Linux-Client wurde die bereits vorhandene Ubuntu-VM `dhcp-test` wiederverwendet. Der Client erhielt Netzwerk- und DNS-Einstellungen per DHCP. Danach wurden `realmd`, `sssd`, `adcli` und die erforderlichen Kerberos-/PAM-Werkzeuge eingerichtet.
 
 ```bash
-id wtest
+realm discover lab.local
+sudo realm join -U Administrator lab.local
+realm list
+id wtest@lab.local
 ```
 
-In der Ausgabe wurde auch die Domänengruppe `hr@lab.local` angezeigt.
+Der Domain Join war erfolgreich (`configured: kerberos-member`). Die Benutzer- und Gruppenauflösung zeigte unter anderem die Mitgliedschaft in `itadmins@lab.local`. Das automatische Anlegen von Home-Verzeichnissen wurde mit `pam-auth-update --enable mkhomedir` aktiviert. Nach erfolgreicher interaktiver Anmeldung war `/home/wtest@lab.local` verfügbar.
 
-Das ist ein Hinweis darauf, dass die Identitäts- und Gruppenauflösung funktioniert hat.
+Für die Domain-Gruppe `ITAdmins` wurde im Lab eine eigene sudoers-Datei angelegt und mit `visudo -cf` geprüft:
 
-Der Test allein bestätigt jedoch noch nicht, dass eine vollständige interaktive Anmeldung über PAM, die Erstellung eines Home-Verzeichnisses oder der Zugriff auf Dateien erfolgreich funktioniert.
+```bash
+echo '%itadmins@lab.local ALL=(ALL) ALL' | sudo tee /etc/sudoers.d/itadmins
+sudo chmod 440 /etc/sudoers.d/itadmins
+sudo visudo -cf /etc/sudoers.d/itadmins
+```
 
-Diese Punkte müssten separat getestet und dokumentiert werden.
+Der Funktionstest `sudo whoami` ergab `root`. Diese Berechtigungsvergabe ist eine bewusste Lab-Entscheidung, keine allgemeine Empfehlung für alle Domain-Gruppen.
 
-### Teil 2 — Fail2ban und SSH testen
+### Probleme und Lösungen
 
-In einem weiteren Test habe ich das Verhalten von Fail2ban bei fehlgeschlagenen SSH-Anmeldeversuchen untersucht.
+**SSH vom Windows-Host zum internen Client:** Die NAT-VMs im Netz `192.168.122.0/24` waren vom Host nicht direkt erreichbar. Die Verbindung erfolgte über `Ubuntu-Server-Base` (`192.168.100.10`) und von dort zum internen Ziel.
 
-Laut meinen Notizen zeigte Fail2ban:
+**Domain Join schlug trotz erfolgreicher Erkennung fehl:** `realm discover` funktionierte, aber `realm join` scheiterte. `kinit Administrator@LAB.LOCAL` ergab `Password incorrect`. Nach dem Zurücksetzen des Administrator-Passworts auf dem DC und erneutem Test funktionierte der Join.
+
+**`id` erfolgreich, aber `su -` fehlgeschlagen:** Die Identitätsabfrage benötigt kein gültiges Benutzerpasswort. `kinit wtest@LAB.LOCAL` zeigte ein abgelaufenes Passwort. Nach einer zulässigen Passwortänderung gelang die Anmeldung und das Home-Verzeichnis wurde erstellt.
+
+**`kinit` erfolgreich, aber Shell weiterhin im alten Home:** Ein Kerberos-Ticket wechselt die Linux-Sitzung nicht. Dafür war `su - wtest@lab.local` erforderlich.
+
+### Was ich gelernt habe
+
+DNS, Kerberos, Domain-Mitgliedschaft, SSSD, PAM, Home-Verzeichnis und sudo sind getrennte Ebenen. Die erfolgreiche Identitätsauflösung ist nicht dasselbe wie ein interaktiver Login; beides wurde in diesem Lab separat untersucht.
+
+---
+
+## Phase 12 — HR-Freigabe und fünf Troubleshooting-Runbooks
+
+### Durchführung
+
+Auf `samba-dc1` wurden die Gruppe `HR`, ein Testbenutzer `hruser` und die Samba-Freigabe `hr-share` eingerichtet:
+
+```bash
+sudo samba-tool group add HR
+sudo samba-tool user create hruser
+sudo samba-tool group addmembers HR hruser
+sudo mkdir -p /srv/samba/hr
+sudo chmod 0777 /srv/samba/hr
+```
+
+Die Freigabe verwendete `path = /srv/samba/hr`, `read only = no` und eine `valid users`-Beschränkung auf `LAB\HR`. Das Samba-Setup wurde mit `testparm -s` geprüft; der Zugriff wurde auf dem Ubuntu-Client mit CIFS getestet.
+
+**Sicherheitshinweis:** `chmod 0777` wurde im Test bewusst permissiv gesetzt, um die gruppenbasierte Samba-Zugriffskontrolle zu isolieren. Es wäre keine geeignete Standardberechtigung für einen produktiven Share; dort wären restriktive POSIX-/ACL-Rechte erforderlich.
+
+### Probleme, Diagnose und Lösungen
+
+1. **Permission denied bei `hr-share`:** `wtest` fehlte in der Domain-Gruppe `HR`. Nach `samba-tool group addmembers HR wtest` funktionierte der Zugriff.
+2. **Anmeldung mit deaktiviertem Konto:** `kinit` meldete `Client's credentials have been revoked`, und `userAccountControl` war `514`. Nach `samba-tool user enable wtest` war das Konto wieder aktiv (`512`); bei Bedarf wurde der SSSD-Cache berücksichtigt.
+3. **Clock-Skew-Versuch:** Die Client-Zeit wurde um zehn Minuten verändert, aber `kinit` funktionierte weiterhin. **Der erwartete Kerberos-Fehler trat nicht ein.** Die Zeit wurde wieder synchronisiert. Eine automatische Kompensation wurde als mögliche Erklärung diskutiert, aber nicht nachgewiesen.
+4. **DNS-Fehler:** Ein absichtlich falscher Resolver (`192.168.122.99`) verursachte `SERVFAIL`. Mit `resolvectl status` wurde der Fehler erkannt und mit `sudo resolvectl revert enp1s0` behoben.
+5. **Client nicht mehr Mitglied der Domäne:** Nach `realm leave` war `realm list` leer und `id wtest@lab.local` konnte den Benutzer nicht mehr auflösen. Ein erneutes `realm join -U Administrator lab.local` stellte die Domain-Mitgliedschaft wieder her.
+
+Eine weitere Werkzeugverwechslung wurde ebenfalls dokumentiert: `samba-tool`-Aufrufe zur lokalen Domain-Datenbank schlugen auf dem Client mit fehlender `sam.ldb` fehl. Diese administrativen Befehle gehören in dieser Übung auf den DC.
+
+**Runbooks:** [HR-Freigabe und Client-Troubleshooting](docs/runbooks/domain-client-and-hr-share.md).
+
+### Was ich gelernt habe
+
+Ein Runbook trennt Symptom, Ursache, Diagnose, Lösung und Vorbeugung. Ein Test, der den erwarteten Fehler **nicht** auslöst, wird genau so festgehalten und nicht als erfolgreicher Fehler-Fix ausgegeben.
+
+---
+
+## Phase 13 — SSH-Schutz mit Fail2ban und Ressourcenprüfung
+
+### Durchführung
+
+Fail2ban wurde auf dem Ubuntu-Client eingerichtet. Die dokumentierten Lab-Einstellungen für die `sshd`-Jail waren:
+
+```ini
+[sshd]
+enabled = true
+backend = systemd
+maxretry = 3
+findtime = 10m
+bantime = 120
+```
+
+Der Testverkehr kam von `samba-dc1` (`192.168.122.10`) und zielte auf den Client (`192.168.122.50`). Nach fehlgeschlagenen SSH-Anmeldungen meldete `fail2ban-client status sshd`:
 
 ```text
 Currently banned: 1
 Banned IP list: 192.168.122.10
 ```
 
-Anschließend habe ich die Sperre mit `unbanip` aufgehoben.
+Eine SSH-Verbindung von `Ubuntu-Server-Base` über eine andere Quelladresse funktionierte weiter. Die Sperre wurde mit `fail2ban-client set sshd unbanip 192.168.122.10` aufgehoben; die Ausgabe war `1`.
 
-Der Befehl meldete:
+### Probleme und Einordnung
 
-```text
-1
-```
+Nach zwei sichtbaren `Permission denied`-Antworten folgte `Connection refused`. Obwohl `maxretry = 3` gesetzt war, lässt sich die Zahl der intern gezählten Authentifizierungsfehler aus der Anzahl der sichtbaren SSH-Ausgaben nicht zuverlässig ableiten. Der Ban ist über den Jail-Status dokumentiert; `Connection refused` allein wäre kein ausreichender Ursachenbeweis.
 
-Außerdem war in den Trainingsnotizen festgehalten, dass andere SSH-Verbindungen über eine andere IP-Adresse weiterhin nutzbar waren.
+Ein zuvor falsch eingegebenes Administrationspasswort hatte bereits einen Fehlversuch von der Verwaltungsmaschine erzeugt. Ein Test-Ban kann deshalb auch die eigene Verwaltungsadresse treffen.
 
-### Wichtige Einschränkungen
-
-Die Adresse `192.168.122.10` gehörte in diesem Test zum Server `samba-dc1`.
-
-Einen Domain Controller zu sperren, kann in einer produktiven Umgebung erhebliche Auswirkungen haben.
-
-Deshalb sollten solche Tests ausschließlich in einer kontrollierten Laborumgebung durchgeführt werden.
-
-Auch die Meldung `Connection refused` allein reicht nicht aus, um die konkrete Ursache einer Verbindungsablehnung zu belegen.
-
-Für eine vollständige Überprüfung wären die ursprüngliche Jail-Konfiguration, Authentifizierungs-Logs und Firewall-Regeln erforderlich.
+Zusätzlich wurden die Ressourcen mit `uptime`, `free -h`, `df -h` und `ss -tulnp` überprüft. Die Lernnotizen nennen für den Client etwa 709 MiB RAM insgesamt, 393 MiB verfügbar und 60 % Belegung des Root-Dateisystems zum Messzeitpunkt.
 
 ### Was ich gelernt habe
 
-Diese Tests haben mir gezeigt, dass man bei der Integration eines Linux-Clients verschiedene Ebenen der Authentifizierung getrennt prüfen muss.
+Im Gegensatz zum selbst geschriebenen Monitoring-Skript kann Fail2ban nach einem Log-Ereignis eine automatisierte Gegenmaßnahme auslösen. Die Konfiguration und das Verhalten gehören immer zu einem bestimmten Testzeitpunkt; sie sind keine universelle Produktionsvorlage.
 
-Auch bei Fail2ban ist es wichtig, nicht nur festzustellen, ob eine IP-Adresse gesperrt wurde, sondern die Ursache und die Auswirkungen dieser Sperre nachvollziehen zu können.
-
-Die Ergebnisse möchte ich bei einem weiteren kontrollierten Test vollständig dokumentieren.
-
-Weitere Informationen stehen im [Fail2ban-Runbook](docs/runbooks/fail2ban-ssh-test.md).
+**Runbook:** [Fail2ban SSH-Test](docs/runbooks/fail2ban-ssh-test.md).
 
 ---
 
